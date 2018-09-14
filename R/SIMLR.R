@@ -1,11 +1,16 @@
-# perform the SIMLR clustering algorithm
+#' The SIMLR clustering algorithm
+#'
+#' @param X genes x samples expression matrix
+#' @param c Number of clusters (parameter name clashes with c()!)
+#' @param k Used as a k-nearest-neighbour parameter
+#'
 "SIMLR" <- function( X, c, no.dim = NA, k = 10, if.impute = FALSE, normalize = FALSE, cores.ratio = 1 ) {
-    
+
     # set any required parameter to the defaults
     if(is.na(no.dim)) {
         no.dim = c
     }
-    
+
     # check the if.impute parameter
     if(if.impute == TRUE) {
         X = t(X)
@@ -18,7 +23,7 @@
         }
         X = t(X)
     }
-    
+
     # check the normalize parameter
     if(normalize == TRUE) {
         X = t(X)
@@ -27,43 +32,47 @@
         C_mean = as.vector(colMeans(X))
         X = apply(X,MARGIN=1,FUN=function(x) return(x-C_mean))
     }
-    
+
     # start the clock to measure the execution time
     ptm = proc.time()
-    
+
     # set some parameters
     NITER = 30
     num = ncol(X)
     r = -1
     beta = 0.8
-    
+
     cat("Computing the multiple Kernels.\n")
-    
-    # compute the kernels
+
+    # compute the kernel distances
     D_Kernels = multiple.kernel(t(X),cores.ratio)
-    
+    #
     # set up some parameters
-    alphaK = 1 / rep(length(D_Kernels),length(D_Kernels))
-    distX = array(0,c(dim(D_Kernels[[1]])[1],dim(D_Kernels[[1]])[2]))
-    for (i in 1:length(D_Kernels)) {
-        distX = distX + D_Kernels[[i]]
-    }
-    distX = distX / length(D_Kernels)
-    
-    # sort distX for rows
-    res = apply(distX,MARGIN=1,FUN=function(x) return(sort(x,index.return = TRUE)))
-    distX1 = array(0,c(nrow(distX),ncol(distX)))
-    idx = array(0,c(nrow(distX),ncol(distX)))
+    #
+    # alphaK looks like a Dirichlet prior: 1 / # categories
+    alphaK = 1 / rep(length(D_Kernels), length(D_Kernels))
+    #
+    # distX is the average of the distances
+    distX = Reduce("+", D_Kernels) / length(D_Kernels)
+    #
+    # sort each row of distX into distX1 and retain the ordering vectors in idx
+    res = apply(distX, MARGIN = 1, FUN = function(x) return(sort(x, index.return = TRUE)))
+    distX1 = array(0, c(nrow(distX), ncol(distX)))
+    idx = array(0, c(nrow(distX), ncol(distX)))
     for(i in 1:nrow(distX)) {
         distX1[i,] = res[[i]]$x
         idx[i,] = res[[i]]$ix
     }
-    
-    A = array(0,c(num,num))
+
+    # Unsure what A is so far
+    A = array(0, c(num, num))
+    # di contains the distances to the (k+1) nearest neighbours
     di = distX1[,2:(k+2)]
-    rr = 0.5 * (k * di[,k+1] - apply(di[,1:k],MARGIN=1,FUN=sum))
-    id = idx[,2:(k+2)]
-    
+    # rr is half the difference between k times the k+1'th nearest neighbour distance and
+    # the sum of the k nearest neighbour distances
+    rr = 0.5 * (k * di[, k + 1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
+    id = idx[, 2:(k + 2)]
+
     numerator = (apply(array(0,c(length(di[,k+1]),dim(di)[2])),MARGIN=2,FUN=function(x) {x=di[,k+1]}) - di)
     temp = (k*di[,k+1] - apply(di[,1:k],MARGIN=1,FUN=sum) + .Machine$double.eps)
     denominator = apply(array(0,c(length(temp),dim(di)[2])),MARGIN=2,FUN=function(x) {x=temp})
@@ -77,29 +86,29 @@
     A[is.nan(A)] = 0
     A0 = (A + t(A)) / 2
     S0 = max(max(distX)) - distX
-    
+
     cat("Performing network diffiusion.\n")
-    
+
     # perform network diffiusion
     S0 = network.diffusion(S0,k)
-    
+
     # compute dn
     S0 = dn(S0,'ave')
     S = S0
     D0 = diag(apply(S,MARGIN=2,FUN=sum))
     L0 = D0 - S
-    
+
     eig1_res = eig1(L0,c,0)
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
-    
+
     # perform the iterative procedure NITER times
     converge = vector()
     for(iter in 1:NITER) {
-        
+
         cat("Iteration: ",iter,"\n")
-        
+
         distf = L2_distance_1(t(F_eig1),t(F_eig1))
         A = array(0,c(num,num))
         b = idx[,2:dim(idx)[2]]
@@ -107,12 +116,12 @@
         inda = cbind(as.vector(a),as.vector(b))
         ad = (distX[inda]+lambda*distf[inda])/2/r
         dim(ad) = c(num,ncol(b))
-        
+
         # call the c function for the optimization
         c_input = -t(ad)
         c_output = t(ad)
         ad = t(.Call("projsplx_R",c_input,c_output))
-        
+
         A[inda] = as.vector(ad)
         A[is.nan(A)] = 0
         A = (A + t(A)) / 2
@@ -154,13 +163,13 @@
             }
         }
         S_old = S
-        
+
         # compute Kbeta
         distX = D_Kernels[[1]] * alphaK[1]
         for (i in 2:length(D_Kernels)) {
             distX = distX + as.matrix(D_Kernels[[i]]) * alphaK[i]
         }
-        
+
         # sort distX for rows
         res = apply(distX,MARGIN=1,FUN=function(x) return(sort(x,index.return = TRUE)))
         distX1 = array(0,c(nrow(distX),ncol(distX)))
@@ -169,17 +178,17 @@
             distX1[i,] = res[[i]]$x
             idx[i,] = res[[i]]$ix
         }
-        
+
     }
     LF = F_eig1
     D = diag(apply(S,MARGIN=2,FUN=sum))
     L = D - S
-    
+
     # compute the eigenvalues and eigenvectors of P
     eigen_L = eigen(L)
     U = eigen_L$vectors
     D = eigen_L$values
-    
+
     if (length(no.dim)==1) {
         U_index = seq(ncol(U),(ncol(U)-no.dim+1))
         F_last = tsne(S,k=no.dim,initial_config=U[,U_index])
@@ -191,15 +200,15 @@
             F_last[i] = tsne(S,k=no.dim[i],initial_config=U[,U_index])
         }
     }
-    
+
     # compute the execution time
     execution.time = proc.time() - ptm
-    
+
     cat("Performing Kmeans.\n")
     y = kmeans(F_last,c,nstart=200)
-    
+
     ydata = tsne(S)
-    
+
     # create the structure with the results
     results = list()
     results[["y"]] = y
@@ -210,7 +219,7 @@
     results[["execution.time"]] = execution.time
     results[["converge"]] = converge
     results[["LF"]] = LF
-    
+
     return(results)
-    
+
 }
