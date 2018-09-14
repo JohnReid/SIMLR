@@ -40,6 +40,8 @@ load(file="./data/Test_4_Usoskin.RData")
 set.seed(11111)
 cat("Performing analysis for Test_1_mECS","\n")
 res_example1 = SIMLR(X=Test_1_mECS$in_X,c=Test_1_mECS$n_clust)
+dim(Test_1_mECS$in_X)
+Test_1_mECS$n_clust
 nmi_1 = compare(Test_1_mECS$true_labs[,1],res_example1$y$cluster,method="nmi")
 
 # test SIMLR.R on example 2
@@ -60,11 +62,31 @@ cat("Performing analysis for Test_4_Usoskin","\n")
 res_example4 = SIMLR(X=Test_4_Usoskin$in_X,c=Test_4_Usoskin$n_clust)
 nmi_4 = compare(Test_4_Usoskin$true_labs[,1],res_example4$y$cluster,method="nmi")
 
-# make the scatterd plots
-plot(res_example1$ydata,col=c(topo.colors(Test_1_mECS$n_clust))[Test_1_mECS$true_labs[,1]],xlab="SIMLR component 1", ylab="SIMLR component 2",pch=20,main="SIMILR 2D visualization for Test_1_mECS")
-
-plot(res_example2$ydata,col=c(topo.colors(Test_2_Kolod$n_clust))[Test_2_Kolod$true_labs[,1]],xlab="SIMLR component 1", ylab="SIMLR component 2",pch=20,main="SIMILR 2D visualization for Test_2_Kolod")
-
-plot(res_example3$ydata,col=c(topo.colors(Test_3_Pollen$n_clust))[Test_3_Pollen$true_labs[,1]],xlab="SIMLR component 1", ylab="SIMLR component 2",pch=20,main="SIMILR 2D visualization for Test_3_Pollen")
-
-plot(res_example4$ydata,col=c(topo.colors(Test_4_Usoskin$n_clust))[Test_4_Usoskin$true_labs[,1]],xlab="SIMLR component 1", ylab="SIMLR component 2",pch=20,main="SIMILR 2D visualization for Test_4_Usoskin")
+# make the scatter plots
+pdf('scatter.pdf', width=12, height=8, paper='special')
+par(mfrow=c(2,2))
+plot(res_example1$ydata,
+     col=c(topo.colors(Test_1_mECS$n_clust))[Test_1_mECS$true_labs[,1]],
+     xlab="SIMLR component 1",
+     ylab="SIMLR component 2",
+     pch=20,
+     main="SIMILR 2D visualization for Test_1_mECS")
+plot(res_example2$ydata,
+     col=c(topo.colors(Test_2_Kolod$n_clust))[Test_2_Kolod$true_labs[,1]],
+     xlab="SIMLR component 1",
+     ylab="SIMLR component 2",
+     pch=20,
+     main="SIMILR 2D visualization for Test_2_Kolod")
+plot(res_example3$ydata,
+     col=c(topo.colors(Test_3_Pollen$n_clust))[Test_3_Pollen$true_labs[,1]],
+     xlab="SIMLR component 1",
+     ylab="SIMLR component 2",
+     pch=20,
+     main="SIMILR 2D visualization for Test_3_Pollen")
+plot(res_example4$ydata,
+     col=c(topo.colors(Test_4_Usoskin$n_clust))[Test_4_Usoskin$true_labs[,1]],
+     xlab="SIMLR component 1",
+     ylab="SIMLR component 2",
+     pch=20,
+     main="SIMILR 2D visualization for Test_4_Usoskin")
+dev.off()
