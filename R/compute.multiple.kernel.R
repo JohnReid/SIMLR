@@ -1,8 +1,12 @@
 #' Compute and returns the multiple kernel distances
 #'
-#' Compute the kernels for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
+#' Compute the kernel distances for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
 #'
-multiple.kernel = function( x, cores.ratio = 1 ) {
+#' @param x The data (samples x features)
+#' @param cores.ratio Proportional of all possible cores - 1 to use.
+#' @param calc.dists Normalise kernels and convert to kernel distances
+#'
+multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
     #
     # compute some parameters from the kernels
     N = dim(x)[1]
@@ -56,13 +60,14 @@ multiple.kernel = function( x, cores.ratio = 1 ) {
         }
     }))
     stopCluster(cl)
-    #
-    # compute the kernel distances
-    for (i in 1:length(D_Kernels)) {
-        D_Kernels[[i]] = Matrix(kernel.distance.2(kernel.normalise(D_Kernels[[i]])), sparse=TRUE, doDiag=FALSE)
+    if (calc.dists) {
+        #
+        # Normalise the kernels, calculate the kernel distances and convert to sparse matrices
+        D_kernels = lapply(D_Kernels,
+                           function(G) Matrix(kernel.distance.2(kernel.normalise(G)), sparse=TRUE, doDiag=FALSE))
     }
     #
-    # Return the distances
+    # Return the distances/kernels
     return(D_Kernels)
 
 }

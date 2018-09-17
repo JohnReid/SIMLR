@@ -117,15 +117,16 @@ all.equal(D_Kernels_tmp, kernel.distance.2(kernel.normalise(K)))
 
 #
 # Kernels
-D_Kernels = multiple.kernel(t(X), cores.ratio=1)
-for (i in 1:length(D_Kernels)) {
-  print(D_Kernels[[i]][1:4, 1:4])
+D_Kernels = multiple.kernel(t(X), cores.ratio=1, calc.dists = FALSE)
+D_Dists = multiple.kernel(t(X), cores.ratio=1), calc.dists = TRUE
+for (i in 1:length(D_Dists)) {
+  print(D_Dists[[i]][1:4, 1:4])
 }
-# saveRDS(D_Kernels, 'D_kernels.rds')
-class(D_Kernels)
-names(D_Kernels)
-length(D_Kernels)
-dim(D_Kernels[[1]])
+# saveRDS(D_Dists, 'D_kernels.rds')
+class(D_Dists)
+names(D_Dists)
+length(D_Dists)
+dim(D_Dists[[1]])
 
 
 
@@ -134,6 +135,7 @@ set.seed(11111)
 cat("Performing analysis for Test_1_mECS","\n")
 res_example1 = SIMLR(X=Test_1_mECS$in_X,c=Test_1_mECS$n_clust)
 nmi_1 = compare(Test_1_mECS$true_labs[,1],res_example1$y$cluster,method="nmi")
+message('NMI: ', nmi_1)
 
 # # test SIMLR.R on example 2
 # set.seed(22222)
@@ -153,8 +155,8 @@ nmi_1 = compare(Test_1_mECS$true_labs[,1],res_example1$y$cluster,method="nmi")
 # res_example4 = SIMLR(X=Test_4_Usoskin$in_X,c=Test_4_Usoskin$n_clust)
 # nmi_4 = compare(Test_4_Usoskin$true_labs[,1],res_example4$y$cluster,method="nmi")
 
-# make the scatterd plots
-pdf('scatter.pdf', width=12, height=8, paper='special')
+# make the scatter plots
+pdf('tests/scatter.pdf', width=12, height=8, paper='special')
 # par(mfrow=c(2,2))
 plot(res_example1$ydata,
      col=c(topo.colors(Test_1_mECS$n_clust))[Test_1_mECS$true_labs[,1]],
