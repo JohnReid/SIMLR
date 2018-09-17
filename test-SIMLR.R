@@ -8,6 +8,9 @@ library(igraph)
 # load the palettes for the plots
 library(grDevices)
 
+# For plotting
+library(ggplot2)
+
 # load the SIMLR R package
 source("./R/SIMLR.R")
 source("./R/compute.multiple.kernel.R")
@@ -36,7 +39,7 @@ load(file="./data/Test_1_mECS.RData")
 # load(file="./data/Test_3_Pollen.RData")
 # load(file="./data/Test_4_Usoskin.RData")
 
-if (FALSE) {
+if (TRUE) {
   #
   # Check data
   dim(Test_1_mECS$in_X)  # genes x samples
@@ -118,9 +121,13 @@ if (FALSE) {
 
   #
   # Kernels
-  D_Kernels = multiple.kernel(t(X), cores.ratio=1, calc.dists = FALSE)
-  D_Dists = multiple.kernel(t(X), cores.ratio=1, calc.dists = TRUE)
-  for (i in 1:length(D_Dists)) {
+  D_Kernels = multiple.unnorm.kernels(t(X), cores.ratio=1)
+  idxs = sample(length(D_Kernels), size=3)
+  for (i in idxs) {
+    print(D_Kernels[[i]][1:4, 1:4])
+  }
+  D_Dists = norm.and.calc.dists(D_Kernels)
+  for (i in idxs) {
     print(D_Dists[[i]][1:4, 1:4])
   }
   # saveRDS(D_Dists, 'D_kernels.rds')
@@ -128,6 +135,14 @@ if (FALSE) {
   names(D_Dists)
   length(D_Dists)
   dim(D_Dists[[1]])
+  G = D_Kernels[[idxs[1]]]
+  dists = D_Dists[[idxs[1]]]
+  .df = data.frame(
+    k = as.vector(G[upper.tri(G)]),
+    d = as.vector(dists[upper.tri(dists)]))
+  pdf('tests/kernel-vs-dist.pdf')
+  ggplot(.df, aes(x = k, y = d)) + geom_point(alpha = .1)
+  dev.off()
 }
 
 
