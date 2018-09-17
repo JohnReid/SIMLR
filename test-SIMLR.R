@@ -36,98 +36,99 @@ load(file="./data/Test_1_mECS.RData")
 # load(file="./data/Test_3_Pollen.RData")
 # load(file="./data/Test_4_Usoskin.RData")
 
-#
-# Check data
-dim(Test_1_mECS$in_X)  # genes x samples
-Test_1_mECS$n_clust  # number of clusters
-X <- Test_1_mECS$in_X
-x <- t(X)
-#
-# Parameters
-sigma = seq(2,1,-0.25)
-allk = seq(10,30,2)
-#
-# Calculate distances
-Diff = dist2(x)^2  # Distances squared square (i.e. to power 4) between samples
-Diff[1:3,1:3]
-#
-# Check distances
-dim(x)
-# Calculate the distances squared
-d12sq <- sum((x[1,] - x[2,])^2)
-d13sq <- sum((x[1,] - x[3,])^2)
-d23sq <- sum((x[2,] - x[3,])^2)
-# Check the distances squared match the Diff
-d12sq^2 - Diff[1, 2]
-d13sq^2 - Diff[1, 3]
-d23sq^2 - Diff[2, 3]
-#
-# Check sorting
-Diff_sort = t(apply(Diff,MARGIN=2,FUN=sort))
-Diff_sort[1:3,1:3]
-Diff_sort_fun <- Diff_sort
-#
-# Mean of k-nearest-neighbours
-k <- 10
-TT = apply(Diff_sort_fun[,2:(k+1)],MARGIN=1,FUN=mean) + .Machine$double.eps
-# Do an outer average
-Sig2 = outer(TT, TT, FUN = function(x, y) (x + y) / 2)
-TT = matrix(data = TT, nrow = length(TT), ncol = 1)
-dim(TT)
-Sig = apply(array(0,c(nrow(TT),ncol(TT))),MARGIN=1,FUN=function(x) {x=TT[,1]})
-dim(Sig)
-Sig[1:3, 1:3]
-matrix(rep(TT, 3), ncol=3)[1:3,]
-Sig = Sig + t(Sig)
-Sig = Sig / 2
-max(abs(Sig - Sig2))
-all.equal(Sig, Sig2)
+if (FALSE) {
+  #
+  # Check data
+  dim(Test_1_mECS$in_X)  # genes x samples
+  Test_1_mECS$n_clust  # number of clusters
+  X <- Test_1_mECS$in_X
+  x <- t(X)
+  #
+  # Parameters
+  sigma = seq(2,1,-0.25)
+  allk = seq(10,30,2)
+  #
+  # Calculate distances
+  Diff = dist2(x)^2  # Distances squared square (i.e. to power 4) between samples
+  Diff[1:3,1:3]
+  #
+  # Check distances
+  dim(x)
+  # Calculate the distances squared
+  d12sq <- sum((x[1,] - x[2,])^2)
+  d13sq <- sum((x[1,] - x[3,])^2)
+  d23sq <- sum((x[2,] - x[3,])^2)
+  # Check the distances squared match the Diff
+  d12sq^2 - Diff[1, 2]
+  d13sq^2 - Diff[1, 3]
+  d23sq^2 - Diff[2, 3]
+  #
+  # Check sorting
+  Diff_sort = t(apply(Diff,MARGIN=2,FUN=sort))
+  Diff_sort[1:3,1:3]
+  Diff_sort_fun <- Diff_sort
+  #
+  # Mean of k-nearest-neighbours
+  k <- 10
+  TT = apply(Diff_sort_fun[,2:(k+1)],MARGIN=1,FUN=mean) + .Machine$double.eps
+  # Do an outer average
+  Sig2 = outer(TT, TT, FUN = function(x, y) (x + y) / 2)
+  TT = matrix(data = TT, nrow = length(TT), ncol = 1)
+  dim(TT)
+  Sig = apply(array(0,c(nrow(TT),ncol(TT))),MARGIN=1,FUN=function(x) {x=TT[,1]})
+  dim(Sig)
+  Sig[1:3, 1:3]
+  matrix(rep(TT, 3), ncol=3)[1:3,]
+  Sig = Sig + t(Sig)
+  Sig = Sig / 2
+  max(abs(Sig - Sig2))
+  all.equal(Sig, Sig2)
 
-#
-# Ensure entries are valid, i.e. at least as great as the machine precision!?!?
-Sig2 = Sig
-Sig_valid = array(0,c(nrow(Sig),ncol(Sig)))
-Sig_valid[which(Sig > .Machine$double.eps,arr.ind=TRUE)] = 1
-Sig = Sig * Sig_valid + .Machine$double.eps
-all.equal(Sig, Sig2)
+  #
+  # Ensure entries are valid, i.e. at least as great as the machine precision!?!?
+  Sig2 = Sig
+  Sig_valid = array(0,c(nrow(Sig),ncol(Sig)))
+  Sig_valid[which(Sig > .Machine$double.eps,arr.ind=TRUE)] = 1
+  Sig = Sig * Sig_valid + .Machine$double.eps
+  all.equal(Sig, Sig2)
 
-# N.B. Diff_fun == Diff == the squared squared distance (i.e. power of 4)
-sigma = 1.5
-Sig
-W = dnorm(Diff, mean = 0, sd = 1.5*Sig)
-K = (W + t(W)) / 2
+  # N.B. Diff_fun == Diff == the squared squared distance (i.e. power of 4)
+  sigma = 1.5
+  Sig
+  W = dnorm(Diff, mean = 0, sd = 1.5*Sig)
+  K = (W + t(W)) / 2
 
-#
-# Test kernel normalisation
-k = 1/sqrt(diag(K)+1)  # In practice this is a vector of ones
-G = K * (k %*% t(k))   # So k %*% t(k) is a matrix of ones
-G1.old = apply(array(0,c(length(diag(G)),length(diag(G)))),MARGIN=2,FUN=function(x) {x=diag(G)})
-G1 = matrix(rep(diag(G), nrow(G)), nrow=nrow(G))
-G1[1:4, 1:4]
-all.equal(G1, G1.old)
-D_Kernels_tmp = (G1 + t(G1) - 2*G)/2
-diag(D_Kernels_tmp)
-D_Kernels_tmp = D_Kernels_tmp - diag(diag(D_Kernels_tmp))
-test.idxs <- seq.int(1, 181, length.out=4)
-test.idxs <- 1:4
-K[test.idxs, test.idxs]
-D_Kernels_tmp[test.idxs, test.idxs]
-cor(as.vector(K), as.vector(D_Kernels_tmp))  # Negative correlation double check that D is a distance
-all.equal(D_Kernels_tmp, kernel.distance.2(kernel.normalise(K)))
+  #
+  # Test kernel normalisation
+  k = 1/sqrt(diag(K)+1)  # In practice this is a vector of ones
+  G = K * (k %*% t(k))   # So k %*% t(k) is a matrix of ones
+  G1.old = apply(array(0,c(length(diag(G)),length(diag(G)))),MARGIN=2,FUN=function(x) {x=diag(G)})
+  G1 = matrix(rep(diag(G), nrow(G)), nrow=nrow(G))
+  G1[1:4, 1:4]
+  all.equal(G1, G1.old)
+  D_Kernels_tmp = (G1 + t(G1) - 2*G)/2
+  diag(D_Kernels_tmp)
+  D_Kernels_tmp = D_Kernels_tmp - diag(diag(D_Kernels_tmp))
+  test.idxs <- seq.int(1, 181, length.out=4)
+  test.idxs <- 1:4
+  K[test.idxs, test.idxs]
+  D_Kernels_tmp[test.idxs, test.idxs]
+  cor(as.vector(K), as.vector(D_Kernels_tmp))  # Negative correlation double check that D is a distance
+  all.equal(D_Kernels_tmp, kernel.distance.2(kernel.normalise(K)))
 
-#
-# Kernels
-D_Kernels = multiple.kernel(t(X), cores.ratio=1, calc.dists = FALSE)
-D_Dists = multiple.kernel(t(X), cores.ratio=1), calc.dists = TRUE
-for (i in 1:length(D_Dists)) {
-  print(D_Dists[[i]][1:4, 1:4])
+  #
+  # Kernels
+  D_Kernels = multiple.kernel(t(X), cores.ratio=1, calc.dists = FALSE)
+  D_Dists = multiple.kernel(t(X), cores.ratio=1, calc.dists = TRUE)
+  for (i in 1:length(D_Dists)) {
+    print(D_Dists[[i]][1:4, 1:4])
+  }
+  # saveRDS(D_Dists, 'D_kernels.rds')
+  class(D_Dists)
+  names(D_Dists)
+  length(D_Dists)
+  dim(D_Dists[[1]])
 }
-# saveRDS(D_Dists, 'D_kernels.rds')
-class(D_Dists)
-names(D_Dists)
-length(D_Dists)
-dim(D_Dists[[1]])
-
 
 
 # # test SIMLR.R on example 1

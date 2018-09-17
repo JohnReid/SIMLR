@@ -7,6 +7,42 @@
 #' @param calc.dists Normalise kernels and convert to kernel distances
 #'
 multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
+    D_Kernels = multiple.unnorm.kernels(x, cores.ratio)
+    if (calc.dists) {
+        D_Kernels = norm.and.calc.dists(D_Kernels)
+    }
+    #
+    # Return the distances/kernels
+    return(D_Kernels)
+}
+
+
+#' Normalise the kernels and convert to kernel distances
+#'
+#' @param D_Kernels The unnormalised kernel (Gram) matrices
+#'
+norm.and.calc.dists = function( D_Kernels ) {
+    #
+    # Normalise the kernels, calculate the kernel distances and convert to sparse matrices
+    message('Calculating distances.')
+    # for (i in 1:length(D_Kernels)) {
+    #     D_Kernels[[i]] = Matrix(kernel.distance.2(kernel.normalise(D_Kernels[[i]])), sparse=TRUE, doDiag=FALSE)
+    # }
+    D_Kernels = lapply(D_Kernels,
+                       function(G) Matrix(kernel.distance.2(kernel.normalise(G)), sparse=TRUE, doDiag=FALSE))
+    return(D_Kernels)
+}
+
+
+#' Compute and returns multiple unnormalised kernels
+#'
+#' Compute the kernels for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
+#'
+#' @param x The data (samples x features)
+#' @param cores.ratio Proportional of all possible cores - 1 to use.
+#'
+multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
+    message('Calculating kernels.')
     #
     # compute some parameters from the kernels
     N = dim(x)[1]
@@ -34,42 +70,37 @@ multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
     cl = makeCluster(cores)
     clusterEvalQ(cl, {library(Matrix)})
     # The parallel apply runs over all the k for the kNN
-    D_Kernels = unlist(parLapply(cl, allk, fun=function(k,x_fun=x,Diff_sort_fun=Diff_sort,
-                                                        Diff_fun=Diff,sigma_fun=sigma) {
-        # Only generate kernels if we have enough data for kNN
-        if(k < nrow(x_fun) - 1) {
-            #
-            # Calculate the mean of the k-nearest-neighbours,
-            # this is mu_i in the paper Eqn. (4)
-            TT = apply(Diff_sort_fun[,2:(k+1)], MARGIN=1, FUN=mean) + .Machine$double.eps
-            #
-            # Do an outer average
-            # this is (mu_i + mu_j) / 2 in the paper Eqn. (4)
-            Sig = outer(TT, TT, FUN = function(x, y) (x + y) / 2)
-            #
-            # Ensure every entry is at least machine epsilon
-            Sig[Sig < .Machine$double.eps] = .Machine$double.eps
-            #
-            # Construct a kernel for each scaling sigma
-            sigma_kernels <- lapply(sigma_fun, FUN=function(sigma) {
-                # N.B. Diff_fun == Diff == the squared squared distance (i.e. power of 4)
-                W = dnorm(Diff_fun, 0, sigma*Sig)
-                return(Matrix((W + t(W)) / 2, sparse=TRUE, doDiag=FALSE))
-            })
-            return(sigma_kernels)
-        }
-    }))
+    D_Kernels = unlist(parLapply(
+        cl,
+        allk,
+        fun = function(k, .Diff_sort = Diff_sort, .Diff = Diff, .sigma = sigma) {
+            # Only generate kernels if we have enough data for kNN
+            if(k <= ncol(.Diff_sort) - 1) {
+                #
+                # Calculate the mean of the k-nearest-neighbours,
+                # this is mu_i in the paper Eqn. (4)
+                TT = apply(.Diff_sort[,2:(k+1)], MARGIN=1, FUN=mean) + .Machine$double.eps
+                #
+                # Do an outer average
+                # this is (mu_i + mu_j) / 2 in the paper Eqn. (4)
+                Sig = outer(TT, TT, FUN = function(x, y) (x + y) / 2)
+                #
+                # Ensure every entry is at least machine epsilon
+                Sig[Sig < .Machine$double.eps] = .Machine$double.eps
+                #
+                # Construct a kernel for each scaling sigma
+                sigma_kernels <- lapply(.sigma, FUN=function(sigma) {
+                    # N.B. .Diff == the squared squared distance (i.e. power of 4)
+                    W = dnorm(.Diff, 0, sigma*Sig)
+                    return(Matrix((W + t(W)) / 2, sparse=TRUE, doDiag=FALSE))
+                })
+                return(sigma_kernels)
+            }
+        }))
     stopCluster(cl)
-    if (calc.dists) {
-        #
-        # Normalise the kernels, calculate the kernel distances and convert to sparse matrices
-        D_kernels = lapply(D_Kernels,
-                           function(G) Matrix(kernel.distance.2(kernel.normalise(G)), sparse=TRUE, doDiag=FALSE))
-    }
     #
-    # Return the distances/kernels
+    # Return the kernels
     return(D_Kernels)
-
 }
 
 
