@@ -11,12 +11,12 @@ SEXP projsplx_R(SEXP y, SEXP x)
     SEXP Rdim = getAttrib(y, R_DimSymbol);
     m = INTEGER(Rdim)[0];
     n = INTEGER(Rdim)[1];
-    
+
     s = allocMatrix(REALSXP, m, 1);
     vs = allocMatrix(REALSXP, m, 1);
-    
+
     for (int k=0;k<n;k++){
-        
+
         double means = 0;
         double mins = 100000;
         for(j = 0; j < m; j++ ){
@@ -37,7 +37,7 @@ SEXP projsplx_R(SEXP y, SEXP x)
                 f = 0;
                 for(j = 0; j < m; j++ ){
                     REAL(vs)[j] = REAL(s)[j]-lambda_m;
-                 
+
                     if (REAL(vs)[j]>0){
                         npos+=1;
                         f+=REAL(vs)[j];
@@ -55,13 +55,11 @@ SEXP projsplx_R(SEXP y, SEXP x)
             for(j = 0; j <= m-1; j++){
                 REAL(x)[j+k*m] = (REAL(vs)[j] > 0)? REAL(vs)[j]:0;
             }
-            
         }
         else{
             for(j = 0; j <= m-1; j++){
                 REAL(x)[j+k*m] = REAL(s)[j];
             }
-            
         }
     }
 

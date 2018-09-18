@@ -24,6 +24,9 @@ source("./R/network.diffusion.R")
 source("./R/utils.simlr.R")
 source("./R/tsne.R")
 
+# create the output directory if needs be
+dir.create('tests', showWarnings = FALSE)
+
 # load the C file
 
 # NOTE 1: we make use of an external C program during the computations of SIMLR.

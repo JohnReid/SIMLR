@@ -51,7 +51,7 @@
 
 }
 
-# compute the L2 distance
+#' Compute the L2 distance
 "L2_distance_1" <- function( a, b ) {
 
     if(dim(a)[1] == 1) {
@@ -72,7 +72,6 @@
     d = d * d_eye
 
     return(d)
-
 }
 
 # umkl function
@@ -128,6 +127,7 @@
 
 }
 
+
 "Hbeta" = function( D, beta ) {
 
     D = (D - min(D)) / (max(D) - min(D) + .Machine$double.eps)
@@ -138,4 +138,18 @@
 
     return(list(H=H,P=P))
 
+}
+
+
+#' Sort each row of X and return the sorted matrix and the ordering vectors
+#'
+sort.rows = function(X) {
+    sorted = array(0, c(nrow(X), ncol(X)))
+    idx = array(0, c(nrow(X), ncol(X)))
+    for(i in 1:nrow(X)) {
+        res = sort(X[i,], index.return = TRUE)
+        sorted[i,] = res$x
+        idx[i,] = res$ix
+    }
+    return(list(sorted = sorted, idx = idx))
 }
