@@ -64,46 +64,67 @@
         idx[i,] = res[[i]]$ix
     }
 
-    # Unsure what A is so far
-    A = array(0, c(num, num))
+    #
+    # Use data to determine lambda
+    #
     # di contains the distances to the (k+1) nearest neighbours
     di = distX1[,2:(k+2)]
     # rr is half the difference between k times the k+1'th nearest neighbour distance and
     # the sum of the k nearest neighbour distances
-    rr = 0.5 * (k * di[, k + 1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
-    id = idx[, 2:(k + 2)]
-
-    numerator = (apply(array(0,c(length(di[,k+1]),dim(di)[2])),MARGIN=2,FUN=function(x) {x=di[,k+1]}) - di)
-    temp = (k*di[,k+1] - apply(di[,1:k],MARGIN=1,FUN=sum) + .Machine$double.eps)
-    denominator = apply(array(0,c(length(temp),dim(di)[2])),MARGIN=2,FUN=function(x) {x=temp})
-    temp = numerator / denominator
-    a = apply(array(0,c(length(t(1:num)),dim(di)[2])),MARGIN=2,FUN=function(x) {x=1:num})
-    A[cbind(as.vector(a),as.vector(id))] = as.vector(temp)
-    if(r<=0) {
+    rr = 0.5 * (k * di[, k+1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
+    # r is hard-coded to -1 so is always less than 0
+    if(r <= 0) {
         r = mean(rr)
     }
-    lambda = max(mean(rr),0)
-    A[is.nan(A)] = 0
-    A0 = (A + t(A)) / 2
-    S0 = max(max(distX)) - distX
+    lambda = max(mean(rr), 0)
 
-    cat("Performing network diffiusion.\n")
+    #
+    # Turns out A and A0 are not used in rest of function so do not execute
+    if( FALSE ) {
+      # The numerator is the difference between the k-nearest-neighbour differences and the (k+1)'th nearest
+      # neighbour difference
+      numerator = t(di[, k+1] - t(di))
+      # Each row of the denominator is the difference between k times the k+1'th nearest neighbour distance and
+      # the sum of the k nearest neighbour distances
+      denominator = matrix(rep(2 * rr, k+1), nrow = num)
+      # A will be a sparse matrix. The non-zero entries reflect the proportion of the distance to the k nearest
+      # neighbours that the i'th nearest neighbour distance is.
+      A = array(0, c(num, num))
+      # a indexes the rows and columns of A
+      a = matrix(rep(1:num, k+1), nrow = num)
+      # Index the k+1 nearest neighbours
+      id = idx[, 2:(k + 2)]
+      # Set the non-zero elements of A
+      A[cbind(as.vector(a), as.vector(id))] = as.vector(numerator / denominator)
+      # Remove any NaNs
+      A[is.nan(A)] = 0
+      # A0 is symmetricised version of A
+      A0 = (A + t(A)) / 2
+    }
 
-    # perform network diffiusion
-    S0 = network.diffusion(S0,k)
+    #
+    # Perform network diffusion
+    cat("Performing network diffusion.\n")
+    # Remember distX is the average of the kernel distances
+    S0 = network.diffusion(max(distX) - distX, k)
+    # Normalise S0 - this will be used as a starting estimate in the optimisation
+    S = dn(S0, 'ave')
 
-    # compute dn
-    S0 = dn(S0,'ave')
-    S = S0
-    D0 = diag(apply(S,MARGIN=2,FUN=sum))
+    #
+    # Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
+    # https://en.wikipedia.org/wiki/Laplacian_matrix
+    D0 = diag(apply(S, MARGIN=2, FUN=sum))
     L0 = D0 - S
 
-    eig1_res = eig1(L0,c,0)
+    #
+    # Spectral decomposition of Laplacian
+    eig1_res = eig1(L0, c, 0)
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
 
-    # perform the iterative procedure NITER times
+    #
+    # Perform the iterative optimisation procedure NITER times
     converge = vector()
     for(iter in 1:NITER) {
 
@@ -210,16 +231,13 @@
     ydata = tsne(S)
 
     # create the structure with the results
-    results = list()
-    results[["y"]] = y
-    results[["S"]] = S
-    results[["F"]] = F_last
-    results[["ydata"]] = ydata
-    results[["alphaK"]] = alphaK
-    results[["execution.time"]] = execution.time
-    results[["converge"]] = converge
-    results[["LF"]] = LF
-
-    return(results)
-
+    return(list(
+        y = y,
+        S = S,
+        F = F_last,
+        ydata = ydata,
+        alphaK = alphaK,
+        execution.time = execution.time,
+        converge = converge,
+        LF = LF))
 }
