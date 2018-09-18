@@ -142,25 +142,25 @@
         #
         # Update S
         #
-        # Compute the L2 distance between the transpose of the eigenvectors
+        # Compute the L2 distances between the transpose of the eigenvectors
         distf = L2_distance_1(t(F_eig1), t(F_eig1))
-        dim(F_eig1)
-        dim(distf)
-        dim(idx)
+        # b contains the indexes (sorting order) vectors for all the same cell
         b = idx[, 2:num]
         inda = cbind(rep(1:num, num-1), as.vector(b))
         ad = (distX[inda] + lambda * distf[inda]) / 2 / r
-        dim(ad) = c(num,ncol(b))
+        dim(ad) = c(num, ncol(b))
         #
         # call the C function for the optimization
         c_input = -t(ad)
         c_output = t(ad)
-        ad = t(.Call("projsplx_R",c_input,c_output))
+        ad = t(.Call("projsplx_R", c_input, c_output))
         #
         # calculate the adjacency matrix
         A = array(0, c(num, num))
         A[inda] = as.vector(ad)
+        # Remove any NaNs
         A[is.nan(A)] = 0
+        # Make the adjacency matrix symmetric
         A = (A + t(A)) / 2
         # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
@@ -196,20 +196,27 @@
         #
         # Test for convergence
         #
+        # This uses the eignengap criterion (between the c'th and (c+1)'th eigenvalues).
+        #
         fn1 = sum(ev_eig1[1:c])
         fn2 = sum(ev_eig1[1:(c+1)])
         converge[iter] = fn2 - fn1
         if (iter < 10) {
+            # Heuristic to increase lambda and reduce r if there is an eigengap in the first 9 iterations
             if (ev_eig1[length(ev_eig1)] > 0.000001) {
                 lambda = 1.5 * lambda
                 r = r / 1.01
             }
         } else {
+            # If the convergence criterion is getting worse
             if(converge[iter] > converge[iter-1]) {
+                # Use the similarity matrix from the last iteration
                 S = S_old
+                # Advise user if the convergence test warrants it
                 if(converge[iter-1] > 0.2) {
                     warning('Maybe you should set a larger value of c.')
                 }
+                # Break out of iteration loop
                 break
             }
         }
