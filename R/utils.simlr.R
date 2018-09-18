@@ -74,7 +74,10 @@
     return(d)
 }
 
-# umkl function
+#' umkl function
+#'
+#' TODO: It is unclear what this function does
+#'
 "umkl" = function( D, beta = NA ) {
 
     # set some parameters

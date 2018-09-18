@@ -170,26 +170,27 @@
         #
         # Update L
         #
-        D = diag(apply(S,MARGIN=2,FUN=sum))
+        # Note that in the code L is the Laplacian matrix and F_eig1 corresponds to L in the paper
+        #
+        D = diag(apply(S, MARGIN = 2, FUN = sum))
         L = D - S
         F_old = F_eig1
         eig1_res = eig1(L, c, 0)
         F_eig1 = eig1_res$eigvec
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
-        evs_eig1 = cbind(evs_eig1,ev_eig1)
+        evs_eig1 = cbind(evs_eig1, ev_eig1)
 
         #
         # Update weights
         #
-        DD = vector()
-        for (i in 1:length(D_Kernels)) {
-            temp = (.Machine$double.eps+D_Kernels[[i]]) * (S+.Machine$double.eps)
-            DD[i] = mean(apply(temp,MARGIN=2,FUN=sum))
-        }
+        DD = sapply(
+            D_Kernels,
+            function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps), MARGIN = 2, FUN = sum)))
         alphaK0 = umkl(DD)
         alphaK0 = alphaK0 / sum(alphaK0)
-        alphaK = (1-beta) * alphaK + beta * alphaK0
+        # Smoothed update of the alphaK parameterised by beta
+        alphaK = (1 - beta) * alphaK + beta * alphaK0
         alphaK = alphaK / sum(alphaK)
 
         #
