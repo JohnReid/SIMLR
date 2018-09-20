@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
 
+#
+# Run SIMLR on the Buettner data set
+#
 
 # required external packages for SIMLR
 library(Matrix)
@@ -60,4 +63,14 @@ plot(res_example1$ydata,
      main="SIMILR 2D visualization for Test_1_mECS")
 dev.off()
 
+#
+# Show timings
+timings.df <-
+  as.data.frame(t(as.data.frame(lapply(res_example1$timings, data.matrix)))) %>%
+  dplyr::mutate(task = names(res_example1$timings)) %>%
+  dplyr::arrange(-elapsed)
+timings.df
+res_example1$timings$update.weights
+#
+# Show NMI
 message('NMI: ', nmi_1)

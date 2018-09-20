@@ -45,8 +45,20 @@
         X = apply(X,MARGIN=1,FUN=function(x) return(x-C_mean))
     }
 
-    # start the clock to measure the execution time
-    ptm = proc.time()
+    # Measure execution times of sub-tasks
+    timings = list()
+    add.timings = function(name) {
+      now = proc.time()
+      elapsed = now - last.time
+      if( name %in% names(timings) ) {
+        elapsed = timings[[name]] + elapsed
+      }
+      timings[[name]] = elapsed
+      assign("timings", value = timings, envir = parent.frame())
+      return(now)
+    }
+    last.time = ptm = proc.time()
+
 
     # set some parameters
     NITER = 30
@@ -57,6 +69,7 @@
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
     D_Kernels = multiple.kernel(t(X), cores.ratio)
+    last.time = add.timings('distances')
 
     #
     # set up some parameters
@@ -86,6 +99,7 @@
     }
     # r represents how much further away the (k+1)'th neighbour is than the average distance to the first k neighbours
     lambda = max(mean(rr), 0)
+    last.time = add.timings('lambda')
 
     #
     # Turns out A and A0 are not used in rest of function so do not execute
@@ -118,19 +132,20 @@
     S0 = network.diffusion(max(distX) - distX, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
+    last.time = add.timings('diffusion')
 
     #
     # Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
     # https://en.wikipedia.org/wiki/Laplacian_matrix
     D0 = diag(apply(S, MARGIN=2, FUN=sum))
     L0 = D0 - S
-
     #
     # Spectral decomposition of Laplacian
     eig1_res = eig1(L0, c, 0)
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
+    last.time = add.timings('spectral')
 
     #
     # Perform the iterative optimisation procedure NITER times
@@ -154,6 +169,7 @@
         c_input = -t(ad)
         c_output = t(ad)
         ad = t(.Call("projsplx_R", c_input, c_output))
+        last.time = add.timings('update.S')
         #
         # calculate the adjacency matrix
         A = array(0, c(num, num))
@@ -166,6 +182,7 @@
         S = (1 - beta) * S + beta * A
         # do network diffusion again (this is not mentioned in the paper or supplementary materials
         S = network.diffusion(S, k)
+        last.time = add.timings('diffusion')
 
         #
         # Update L
@@ -180,6 +197,7 @@
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
         evs_eig1 = cbind(evs_eig1, ev_eig1)
+        last.time = add.timings('spectral')
 
         #
         # Update weights
@@ -192,6 +210,7 @@
         # Smoothed update of the alphaK parameterised by beta
         alphaK = (1 - beta) * alphaK + beta * alphaK0
         alphaK = alphaK / sum(alphaK)
+        last.time = add.timings('update.weights')
 
         #
         # Test for convergence
@@ -222,6 +241,7 @@
         }
         # Retain S as S_old in case our next iteration is not good and we want to use it
         S_old = S
+        last.time = add.timings('convergence')
 
         #
         # Compute Kbeta, the weighted kernel distances
@@ -234,6 +254,7 @@
         temp = sort.rows(distX)
         distX1 = temp$sorted
         idx = temp$idx
+        last.time = add.timings('sort.distances')
     }
 
     #
@@ -247,6 +268,7 @@
     eigen_L = eigen(L)
     U = eigen_L$vectors
     D = eigen_L$values
+    last.time = add.timings('eigen')
 
     #
     # Run t-SNE on the eigenvectors
@@ -259,6 +281,7 @@
     } else {
         F_last = lapply(no.dim, do.tsne)
     }
+    last.time = add.timings('t.SNE.eigen')
 
     #
     # Compute the execution time
@@ -268,11 +291,13 @@
     # Run k-means clustering
     cat("Performing Kmeans.\n")
     y = kmeans(F_last, c, nstart=200)
+    last.time = add.timings('k.means')
 
     #
     # Run t-SNE on S
     cat("Running t-SNE on S.\n")
     ydata = tsne(S)
+    last.time = add.timings('t.SNE.S')
 
     # create the structure with the results
     return(list(
@@ -282,6 +307,7 @@
         ydata = ydata,
         alphaK = alphaK,
         execution.time = execution.time,
+        timings = timings,
         converge = converge,
         LF = LF))
 }
