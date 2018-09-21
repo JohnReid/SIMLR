@@ -50,8 +50,8 @@ print('Convergence:')
 print(res_example1$converge)
 print('Weights:')
 print(res_example1$alphaK)
-print('k-means:')
-print(res_example1$y)
+# print('k-means:')
+# print(res_example1$y)
 nmi_1 = compare(Test_1_mECS$true_labs[,1],res_example1$y$cluster,method="nmi")
 
 # make the scatter plots

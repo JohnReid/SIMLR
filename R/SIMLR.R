@@ -18,6 +18,9 @@
 #'
 "SIMLR" <- function( X, c, no.dim = NA, k = 10, if.impute = FALSE, normalize = FALSE, cores.ratio = 1 ) {
 
+    # Measure execution times of sub-tasks
+    timer = CumulativeTimer$new()
+
     # set any required parameter to the defaults
     if(is.na(no.dim)) {
         no.dim = c
@@ -35,6 +38,7 @@
         }
         X = t(X)
     }
+    timer$add('impute')
 
     # check the normalize parameter
     if(normalize == TRUE) {
@@ -44,22 +48,20 @@
         C_mean = as.vector(colMeans(X))
         X = apply(X,MARGIN=1,FUN=function(x) return(x-C_mean))
     }
+    timer$add('normalise')
 
-    # Measure execution times of sub-tasks
-    timer = CumulativeTimer$new()
-    last.time = ptm = proc.time()
-
+    # Remember the time to calculate execution time later
+    ptm = proc.time()
 
     # set some parameters
     NITER = 30
     num = ncol(X)
-    r = -1
     beta = 0.8
 
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
     D_Kernels = multiple.kernel(t(X), cores.ratio)
-    timer$add('distances')
+    timer$add('calc.distances')
 
     #
     # set up some parameters
@@ -83,12 +85,9 @@
     # rr is half the difference between k times the k+1'th nearest neighbour distance and
     # the sum of the k nearest neighbour distances
     rr = 0.5 * (k * di[, k+1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
-    # r is hard-coded to -1 so is always less than 0
-    if(r <= 0) {
-        r = mean(rr)
-    }
     # r represents how much further away the (k+1)'th neighbour is than the average distance to the first k neighbours
-    lambda = max(mean(rr), 0)
+    r = mean(rr)
+    lambda = max(r, 0)
     timer$add('lambda')
 
     #
@@ -116,6 +115,8 @@
     }
 
     #
+    # Initialise S, of course this is nothing like as described in the paper
+    #
     # Perform network diffusion
     cat("Performing network diffusion.\n")
     # Remember distX is the average of the kernel distances
@@ -130,12 +131,14 @@
     D0 = diag(apply(S, MARGIN=2, FUN=sum))
     L0 = D0 - S
     #
-    # Spectral decomposition of Laplacian
+    # Spectral decomposition of Laplacian - this relates to the largest eigenvalues of S - I_n talked about in the
+    # paper
     eig1_res = eig1(L0, c, 0)
+    # F_eig1 is L or at least related to L
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
-    timer$add('spectral')
+    timer$add('update.L')
 
     #
     # Perform the iterative optimisation procedure NITER times
@@ -150,10 +153,8 @@
         # Compute the square of the L2 distances between the columns of the eigenvectors
         # distf is num x num
         distf = as.matrix(dist(F_eig1))^2
-        # b contains the indexes (sorting order) vectors ignoring self-similarity
-        b = idx[, 2:num]
         # Construct indexes into the distances
-        inda = cbind(rep(1:num, num-1), as.vector(b))
+        inda = cbind(rep(1:num, num-1), as.vector(idx[, 2:num]))
         # distX contains the weighted kernel distances
         # Calculate the v_i as in the supplementary material.
         # Note that in the supplementary material, the equation shows that these are subtracted not added
@@ -161,14 +162,14 @@
         # Also note that the equation uses beta not r in the denominator
         ad = (distX[inda] + lambda * distf[inda]) / 2 / r
         # Convert the vector ad into a matrix
-        dim(ad) = c(num, ncol(b))
+        dim(ad) = c(num, num - 1)
         #
         # call the C function for the optimization
         # This is the piecewise linear and convex optimisation problem mentioned in the supplementary materials.
+        # Note that this appears to be parallelisable but is done sequentially in the C code.
         c_input = -t(ad)
         c_output = t(ad)
         ad = t(.Call("projsplx_R", c_input, c_output))
-        timer$add('update.S')
         #
         # Calculate the adjacency matrix
         A = array(0, c(num, num))
@@ -180,6 +181,7 @@
         A
         # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
+        timer$add('update.S')
         # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
         timer$add('diffusion')
@@ -197,7 +199,7 @@
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
         evs_eig1 = cbind(evs_eig1, ev_eig1)
-        timer$add('spectral')
+        timer$add('update.L')
 
         #
         # Update weights
@@ -244,10 +246,9 @@
         timer$add('convergence')
 
         #
-        # Compute Kbeta, the weighted kernel distances
+        # Compute the weighted kernel distances
         #
         distX = Reduce("+", lapply(1:length(D_Kernels), function(i) D_Kernels[[i]] * alphaK[i]))
-
         #
         # We need the sorted distances updated according to the new weights
         # sort each row of distX into distX1 and retain the ordering vectors in idx
@@ -262,9 +263,8 @@
     LF = F_eig1
     D = diag(apply(S, MARGIN = 2, FUN = sum))
     L = D - S
-
     #
-    # compute the eigenvalues and eigenvectors of P
+    # compute the eigenvalues and eigenvectors of the Laplacian
     eigen_L = eigen(L)
     U = eigen_L$vectors
     D = eigen_L$values
