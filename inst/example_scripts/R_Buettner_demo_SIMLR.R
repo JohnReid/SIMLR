@@ -5,21 +5,17 @@
 #
 
 # required external packages for SIMLR
-library(Matrix)
-library(parallel)
+# library(Matrix)
+# library(parallel)
 
 # load the igraph package to compute the NMI
-library(igraph)
+# library(igraph)
 
 # load the palettes for the plots
-library(grDevices)
+# library(grDevices)
 
 # load the SIMLR R package
-source("./R/SIMLR.R")
-source("./R/compute.multiple.kernel.R")
-source("./R/network.diffusion.R")
-source("./R/utils.simlr.R")
-source("./R/tsne.R")
+devtools::load_all('../..')
 
 
 

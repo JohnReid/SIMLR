@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 # required external packages for SIMLR large scale
 library(Rcpp)
 library(Matrix)
