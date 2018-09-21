@@ -1,5 +1,3 @@
-/vignettes/vignette.R
-
 # History files
 .Rhistory
 .Rapp
@@ -15,11 +13,11 @@
 .Rproj.user
 *.Rproj
 
-# TRONCO Output
+# Outputs
 *.pdf
 *.tar.gz
 *.tex
-*.mat
+#*.mat
 *.zip
 *.png
 

@@ -36,17 +36,22 @@
 #'
 "SIMLR" <- function( X, c, no.dim = NA, k = 10, if.impute = FALSE, normalize = FALSE, cores.ratio = 1 ) {
 
-    # convert SCESet    
+    # convert SCESet
     if (is(X, "SCESet")) {
         cat("X is and SCESet, converting to input matrix.\n")
         X = X@assayData$exprs
     }
+
+    # Measure execution times of sub-tasks
+    timer = CumulativeTimer$new()
+
     # set any required parameter to the defaults
     if(is.na(no.dim)) {
         no.dim = c
     }
+
     # check the if.impute parameter
-    if (if.impute == TRUE) {
+    if(if.impute == TRUE) {
         X = t(X)
         X_zeros = which(X==0,arr.ind=TRUE)
         if(length(X_zeros)>0) {
@@ -57,6 +62,8 @@
         }
         X = t(X)
     }
+    timer$add('impute')
+
     # check the normalize parameter
     if(normalize == TRUE) {
         X = t(X)
@@ -65,194 +72,266 @@
         C_mean = as.vector(colMeans(X))
         X = apply(X,MARGIN=1,FUN=function(x) return(x-C_mean))
     }
-    
-    # start the clock to measure the execution time
+    timer$add('normalise')
+
+    # Remember the time to calculate execution time later
     ptm = proc.time()
-    
+
     # set some parameters
     NITER = 30
     num = ncol(X)
-    r = -1
     beta = 0.8
-    
+
+    # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
-    D_Kernels = multiple.kernel(t(X),cores.ratio)
-    
+    D_Kernels = multiple.kernel(t(X), cores.ratio)
+    timer$add('calc.distances')
+
+    #
     # set up some parameters
-    alphaK = 1 / rep(length(D_Kernels),length(D_Kernels))
-    distX = array(0,c(dim(D_Kernels[[1]])[1],dim(D_Kernels[[1]])[2]))
-    for (i in 1:length(D_Kernels)) {
-        distX = distX + D_Kernels[[i]]
-    }
-    distX = distX / length(D_Kernels)
-    
-    # sort distX for rows
-    res = apply(distX,
-        MARGIN=1,
-        FUN=function(x) return(sort(x,index.return = TRUE)))
-    distX1 = array(0,c(nrow(distX),ncol(distX)))
-    idx = array(0,c(nrow(distX),ncol(distX)))
-    for(i in 1:nrow(distX)) {
-        distX1[i,] = res[[i]]$x
-        idx[i,] = res[[i]]$ix
-    }
-    
-    A = array(0,c(num,num))
+    #
+    # alphaK looks like a Dirichlet prior: 1 / # categories
+    alphaK = 1 / rep(length(D_Kernels), length(D_Kernels))
+    #
+    # distX is the average of the distances
+    distX = Reduce("+", D_Kernels) / length(D_Kernels)
+    #
+    # sort each row of distX into distX1 and retain the ordering vectors in idx
+    temp = sort.rows(distX)
+    distX1 = temp$sorted
+    idx = temp$idx
+
+    #
+    # Use data to determine lambda
+    #
+    # di contains the distances to the (k+1) nearest neighbours
     di = distX1[,2:(k+2)]
-    rr = 0.5 * (k * di[,k+1] - apply(di[,1:k],MARGIN=1,FUN=sum))
-    id = idx[,2:(k+2)]
-    
-    numerator = (apply(array(0,c(length(di[,k+1]),dim(di)[2])),
-        MARGIN = 2,
-        FUN = function(x) {x=di[,k+1]}) - di)
-    temp = (k*di[,k+1] - apply(di[,1:k],MARGIN=1,FUN=sum) + .Machine$double.eps)
-    denominator = apply(array(0,c(length(temp),dim(di)[2])),
-        MARGIN = 2,
-        FUN = function(x) {x=temp})
-    temp = numerator / denominator
-    a = apply(array(0,c(length(t(1:num)),dim(di)[2])),
-        MARGIN = 2,
-        FUN = function(x) {x=1:num})
-    A[cbind(as.vector(a),as.vector(id))] = as.vector(temp)
-    if(r<=0) {
-        r = mean(rr)
+    # rr is half the difference between k times the k+1'th nearest neighbour distance and
+    # the sum of the k nearest neighbour distances
+    rr = 0.5 * (k * di[, k+1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
+    # r represents how much further away the (k+1)'th neighbour is than the average distance to the first k neighbours
+    r = mean(rr)
+    lambda = max(r, 0)
+    timer$add('lambda')
+
+    #
+    # Turns out A and A0 are not used in rest of function so do not execute
+    if( FALSE ) {
+      # The numerator is the difference between the k-nearest-neighbour differences and the (k+1)'th nearest
+      # neighbour difference
+      numerator = t(di[, k+1] - t(di))
+      # Each row of the denominator is the difference between k times the k+1'th nearest neighbour distance and
+      # the sum of the k nearest neighbour distances
+      denominator = matrix(rep(2 * rr, k+1), nrow = num)
+      # A will be a sparse matrix. The non-zero entries reflect the proportion of the distance to the k nearest
+      # neighbours that the i'th nearest neighbour distance is.
+      A = array(0, c(num, num))
+      # a indexes the rows and columns of A
+      a = matrix(rep(1:num, k+1), nrow = num)
+      # Index the k+1 nearest neighbours
+      id = idx[, 2:(k + 2)]
+      # Set the non-zero elements of A
+      A[cbind(as.vector(a), as.vector(id))] = as.vector(numerator / denominator)
+      # Remove any NaNs
+      A[is.nan(A)] = 0
+      # A0 is symmetricised version of A
+      A0 = (A + t(A)) / 2
     }
-    lambda = max(mean(rr),0)
-    A[is.nan(A)] = 0
-    A0 = (A + t(A)) / 2
-    S0 = max(max(distX)) - distX
-    
-    cat("Performing network diffiusion.\n")
-    S0 = network.diffusion(S0,k)
-    
-    # compute dn
-    S0 = dn(S0,'ave')
-    S = S0
-    D0 = diag(apply(S,MARGIN=2,FUN=sum))
+
+    #
+    # Initialise S, of course this is nothing like as described in the paper
+    #
+    # Perform network diffusion
+    cat("Performing network diffusion.\n")
+    # Remember distX is the average of the kernel distances
+    S0 = network.diffusion(max(distX) - distX, k)
+    # Normalise S0 - this will be used as a starting estimate in the optimisation
+    S = dn(S0, 'ave')
+    timer$add('diffusion')
+
+    #
+    # Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
+    # https://en.wikipedia.org/wiki/Laplacian_matrix
+    D0 = diag(apply(S, MARGIN=2, FUN=sum))
     L0 = D0 - S
-    
-    eig1_res = eig1(L0,c,0)
+    #
+    # Spectral decomposition of Laplacian - this relates to the largest eigenvalues of S - I_n talked about in the
+    # paper
+    eig1_res = eig1(L0, c, 0)
+    # F_eig1 is L or at least related to L
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
-    
-    # perform the iterative procedure NITER times
+    timer$add('update.L')
+
+    #
+    # Perform the iterative optimisation procedure NITER times
     converge = vector()
     for(iter in 1:NITER) {
-        cat("Iteration: ",iter,"\n")
-        
-        distf = L2_distance_1(t(F_eig1),t(F_eig1))
-        A = array(0,c(num,num))
-        b = idx[,2:dim(idx)[2]]
-        a = apply(array(0,c(num,ncol(b))),MARGIN=2,FUN=function(x){ x = 1:num })
-        inda = cbind(as.vector(a),as.vector(b))
-        ad = (distX[inda]+lambda*distf[inda])/2/r
-        dim(ad) = c(num,ncol(b))
-        
-        # call the c function for the optimization
+
+        cat("Iteration: ", iter, "\n")
+
+        #
+        # Update S
+        #
+        # Compute the square of the L2 distances between the columns of the eigenvectors
+        # distf is num x num
+        distf = as.matrix(dist(F_eig1))^2
+        # Construct indexes into the distances
+        inda = cbind(rep(1:num, num-1), as.vector(idx[, 2:num]))
+        # distX contains the weighted kernel distances
+        # Calculate the v_i as in the supplementary material.
+        # Note that in the supplementary material, the equation shows that these are subtracted not added
+        # The supplementary material is wrong, it should be addition.
+        # Also note that the equation uses beta not r in the denominator
+        ad = (distX[inda] + lambda * distf[inda]) / 2 / r
+        # Convert the vector ad into a matrix
+        dim(ad) = c(num, num - 1)
+        #
+        # call the C function for the optimization
+        # This is the piecewise linear and convex optimisation problem mentioned in the supplementary materials.
+        # Note that this appears to be parallelisable but is done sequentially in the C code.
         c_input = -t(ad)
         c_output = t(ad)
-        ad = t(.Call("projsplx", c_input, c_output))
-        
+        ad = t(.Call("projsplx_R", c_input, c_output))
+        #
+        # Calculate the adjacency matrix
+        A = array(0, c(num, num))
         A[inda] = as.vector(ad)
+        # Remove any NaNs
         A[is.nan(A)] = 0
+        # Make the adjacency matrix symmetric
         A = (A + t(A)) / 2
+        A
+        # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
-        S = network.diffusion(S,k)
-        D = diag(apply(S,MARGIN=2,FUN=sum))
+        timer$add('update.S')
+        # do similarity enhancement by diffusion
+        S = network.diffusion(S, k)
+        timer$add('diffusion')
+
+        #
+        # Update L
+        #
+        # Note that in the code L is the Laplacian matrix and F_eig1 corresponds to L in the paper
+        #
+        D = diag(apply(S, MARGIN = 2, FUN = sum))
         L = D - S
         F_old = F_eig1
-        eig1_res = eig1(L,c,0)
+        eig1_res = eig1(L, c, 0)
         F_eig1 = eig1_res$eigvec
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
-        evs_eig1 = cbind(evs_eig1,ev_eig1)
-        DD = vector()
-        for (i in 1:length(D_Kernels)) {
-            temp = (.Machine$double.eps+D_Kernels[[i]]) * (S+.Machine$double.eps)
-            DD[i] = mean(apply(temp,MARGIN=2,FUN=sum))
-        }
+        evs_eig1 = cbind(evs_eig1, ev_eig1)
+        timer$add('update.L')
+
+        #
+        # Update weights
+        #
+        DD = sapply(
+            D_Kernels,
+            function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps), MARGIN = 2, FUN = sum)))
         alphaK0 = umkl(DD)
         alphaK0 = alphaK0 / sum(alphaK0)
-        alphaK = (1-beta) * alphaK + beta * alphaK0
+        # Smoothed update of the alphaK parameterised by beta
+        alphaK = (1 - beta) * alphaK + beta * alphaK0
         alphaK = alphaK / sum(alphaK)
+        timer$add('update.weights')
+
+        #
+        # Test for convergence
+        #
+        # This uses the eignengap criterion (between the c'th and (c+1)'th eigenvalues).
+        #
         fn1 = sum(ev_eig1[1:c])
         fn2 = sum(ev_eig1[1:(c+1)])
         converge[iter] = fn2 - fn1
-        if (iter<10) {
+        if (iter < 10) {
+            # Heuristic to increase lambda and reduce r if there is an eigengap in the first 9 iterations
             if (ev_eig1[length(ev_eig1)] > 0.000001) {
                 lambda = 1.5 * lambda
                 r = r / 1.01
             }
-        }
-        else {
-            if(converge[iter]>converge[iter-1]) {
+        } else {
+            # If the convergence criterion is getting worse
+            if(converge[iter] > converge[iter-1]) {
+                # Use the similarity matrix from the last iteration
                 S = S_old
+                # Advise user if the convergence test warrants it
                 if(converge[iter-1] > 0.2) {
                     warning('Maybe you should set a larger value of c.')
                 }
+                # Break out of iteration loop
                 break
             }
         }
+        # Retain S as S_old in case our next iteration is not good and we want to use it
         S_old = S
-        
-        # compute Kbeta
-        distX = D_Kernels[[1]] * alphaK[1]
-        for (i in 2:length(D_Kernels)) {
-            distX = distX + as.matrix(D_Kernels[[i]]) * alphaK[i]
-        }
-        
-        # sort distX for rows
-        res = apply(distX,
-            MARGIN = 1,
-            FUN=function(x) return(sort(x,index.return = TRUE)))
-        distX1 = array(0,c(nrow(distX),ncol(distX)))
-        idx = array(0,c(nrow(distX),ncol(distX)))
-        for(i in 1:nrow(distX)) {
-            distX1[i,] = res[[i]]$x
-            idx[i,] = res[[i]]$ix
-        }
+        timer$add('convergence')
+
+        #
+        # Compute the weighted kernel distances
+        #
+        distX = Reduce("+", lapply(1:length(D_Kernels), function(i) D_Kernels[[i]] * alphaK[i]))
+        #
+        # We need the sorted distances updated according to the new weights
+        # sort each row of distX into distX1 and retain the ordering vectors in idx
+        temp = sort.rows(distX)
+        distX1 = temp$sorted
+        idx = temp$idx
+        timer$add('sort.distances')
     }
+
+    #
+    # Calculate the Laplacian matrix
     LF = F_eig1
-    D = diag(apply(S,MARGIN=2,FUN=sum))
+    D = diag(apply(S, MARGIN = 2, FUN = sum))
     L = D - S
-    
-    # compute the eigenvalues and eigenvectors of P
+    #
+    # compute the eigenvalues and eigenvectors of the Laplacian
     eigen_L = eigen(L)
     U = eigen_L$vectors
     D = eigen_L$values
-    
-    if (length(no.dim)==1) {
-        U_index = seq(ncol(U),(ncol(U)-no.dim+1))
-        F_last = tsne(S,k=no.dim,initial_config=U[,U_index])
+    timer$add('eigen')
+
+    #
+    # Run t-SNE on the eigenvectors
+    do.tsne <- function(k) {
+        U_index = seq(ncol(U), (ncol(U) - no.dim + 1))
+        tsne(S,k = no.dim,initial_config=U[, U_index])
     }
-    else {
-        F_last = list()
-        for (i in 1:length(no.dim)) {
-            U_index = seq(ncol(U),(ncol(U)-no.dim[i]+1))
-            F_last[i] = tsne(S,k=no.dim[i],initial_config=U[,U_index])
-        }
+    if (length(no.dim) == 1) {
+        F_last = do.tsne(k = no.dim)
+    } else {
+        F_last = lapply(no.dim, do.tsne)
     }
-    
-    # compute the execution time
+    timer$add('t.SNE.eigen')
+
+    #
+    # Compute the execution time
     execution.time = proc.time() - ptm
-    
+
+    #
+    # Run k-means clustering
     cat("Performing Kmeans.\n")
-    y = kmeans(F_last,c,nstart=200)
-    
+    y = kmeans(F_last, c, nstart=200)
+    timer$add('k.means')
+
+    #
+    # Run t-SNE on S
+    cat("Running t-SNE on S.\n")
     ydata = tsne(S)
-    
+    timer$add('t.SNE.S')
+
     # create the structure with the results
-    results = list()
-    results[["y"]] = y
-    results[["S"]] = S
-    results[["F"]] = F_last
-    results[["ydata"]] = ydata
-    results[["alphaK"]] = alphaK
-    results[["execution.time"]] = execution.time
-    results[["converge"]] = converge
-    results[["LF"]] = LF
-    
-    return(results)
-    
+    return(list(
+        y = y,
+        S = S,
+        F = F_last,
+        ydata = ydata,
+        alphaK = alphaK,
+        execution.time = execution.time,
+        timings = timer$get_timings(),
+        converge = converge,
+        LF = LF))
 }
