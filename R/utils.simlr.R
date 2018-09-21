@@ -1,6 +1,5 @@
-library(R6)
-
-CumulativeTimer <- R6Class("CumulativeTimer",
+#' @importFrom magrittr %>%
+CumulativeTimer <- R6::R6Class("CumulativeTimer",
   public = list(
     last_time = NULL,
     timings = list(),

@@ -1,7 +1,7 @@
 Package: SIMLR
-Version: 1.6.1
-Date: 2018-07-18
-Title: Title: 
+Version: 1.6.2
+Date: 2018-09-21
+Title:
     SIMLR and CIMLR Multi-kernel LeaRning methods
 Authors@R: c(person("Daniele", "Ramazzotti", role=c("aut", "cre"), email="daniele.ramazzotti@yahoo.com"),
              person("Bo", "Wang", role=c("aut"), email="bowang87@stanford.edu"),
@@ -15,6 +15,8 @@ Imports:
     Matrix,
     stats,
     methods,
+    dplyr,
+    R6,
     Rcpp,
     pracma,
     RcppAnnoy,
@@ -26,14 +28,17 @@ Suggests:
     knitr,
     igraph
 Description:
-    In this package we provide implementations of both SIMLR and CIMLR. These methods were originally applied to single-cell and cancer genomic data, but they are in principle capable of effectively and efficiently learning similarities in all the contexts where diverse and heterogeneous statistical characteristics of the data make the problem harder for standard approaches. 
+    In this package we provide implementations of both SIMLR and CIMLR. These methods were originally applied to
+    single-cell and cancer genomic data, but they are in principle capable of effectively and efficiently learning
+    similarities in all the contexts where diverse and heterogeneous statistical characteristics of the data make the
+    problem harder for standard approaches.
 Encoding: UTF-8
 LazyData: TRUE
 License: file LICENSE
 URL: https://github.com/BatzoglouLabSU/SIMLR
 BugReports: https://github.com/BatzoglouLabSU/SIMLR
 biocViews: Clustering, GeneExpression, Sequencing, SingleCell
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 LinkingTo: Rcpp
 NeedsCompilation: yes
 VignetteBuilder: knitr

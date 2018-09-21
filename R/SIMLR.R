@@ -193,7 +193,7 @@
         # Note that this appears to be parallelisable but is done sequentially in the C code.
         c_input = -t(ad)
         c_output = t(ad)
-        ad = t(.Call("projsplx_R", c_input, c_output))
+        ad = t(.Call("projsplx", c_input, c_output))
         #
         # Calculate the adjacency matrix
         A = array(0, c(num, num))
