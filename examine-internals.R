@@ -248,3 +248,65 @@ eig1_res = eig1(L0, c, 0)
 F_eig1 = eig1_res$eigvec
 temp_eig1 = eig1_res$eigval
 evs_eig1 = eig1_res$eigval_full
+
+
+#
+# Check L2_distance_1()
+#
+a = t(F_eig1)
+b = NULL
+if(dim(a)[1] == 1) {
+    a = rbind(a, rep(0, dim(a)[2]))
+}
+aa = apply(a, MARGIN=2, FUN=function(x) sum(x^2))
+if( is.null(b) ) {
+  b = a
+  bb = aa
+} else {
+  if(dim(b)[1] == 1) {
+      b = rbind(b,rep(0,dim(b)[2]))
+  }
+  bb = apply(b*b, MARGIN=2, FUN=sum)
+}
+ab = t(a) %*% b
+d1 = apply(array(0,c(length(t(aa)),length(bb))),MARGIN=2,FUN=function(x){ x = t(aa) })
+dim(d1)
+d2 = t(apply(array(0,c(length(t(bb)),length(aa))),MARGIN=2,FUN=function(x){ x = t(bb) }))
+d = d1 + d2 - 2 * ab
+d = Re(d)
+dim(d)
+d = matrix(mapply(d,FUN=function(x) { return(max(max(x),0)) }),nrow=nrow(d),ncol=ncol(d))
+d_eye = array(1,dim(d))
+diag(d_eye) = 0
+d = d * d_eye
+
+
+#
+# Update S
+#
+# Compute the L2 distances between the transpose of the eigenvectors
+# distf is num x num
+distf = L2_distance_1(t(F_eig1), t(F_eig1))
+dim(distf)
+# b contains the indexes (sorting order) vectors ignoring self-similarity
+b = idx[, 2:num]
+inda = cbind(rep(1:num, num-1), as.vector(b))
+ad = (distX[inda] + lambda * distf[inda]) / 2 / r
+dim(ad) = c(num, ncol(b))
+#
+# call the C function for the optimization
+c_input = -t(ad)
+c_output = t(ad)
+ad = t(.Call("projsplx_R", c_input, c_output))
+#
+# calculate the adjacency matrix
+A = array(0, c(num, num))
+A[inda] = as.vector(ad)
+# Remove any NaNs
+A[is.nan(A)] = 0
+# Make the adjacency matrix symmetric
+A = (A + t(A)) / 2
+# S is a smoothed version of the old S with the new adjacency
+S = (1 - beta) * S + beta * A
+# do network diffusion again (this is not mentioned in the paper or supplementary materials
+S = network.diffusion(S, k)

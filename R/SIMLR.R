@@ -46,17 +46,7 @@
     }
 
     # Measure execution times of sub-tasks
-    timings = list()
-    add.timings = function(name) {
-      now = proc.time()
-      elapsed = now - last.time
-      if( name %in% names(timings) ) {
-        elapsed = timings[[name]] + elapsed
-      }
-      timings[[name]] = elapsed
-      assign("timings", value = timings, envir = parent.frame())
-      return(now)
-    }
+    timer = CumulativeTimer$new()
     last.time = ptm = proc.time()
 
 
@@ -69,7 +59,7 @@
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
     D_Kernels = multiple.kernel(t(X), cores.ratio)
-    last.time = add.timings('distances')
+    timer$add('distances')
 
     #
     # set up some parameters
@@ -99,7 +89,7 @@
     }
     # r represents how much further away the (k+1)'th neighbour is than the average distance to the first k neighbours
     lambda = max(mean(rr), 0)
-    last.time = add.timings('lambda')
+    timer$add('lambda')
 
     #
     # Turns out A and A0 are not used in rest of function so do not execute
@@ -132,7 +122,7 @@
     S0 = network.diffusion(max(distX) - distX, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
-    last.time = add.timings('diffusion')
+    timer$add('diffusion')
 
     #
     # Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
@@ -145,7 +135,7 @@
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
     evs_eig1 = eig1_res$eigval_full
-    last.time = add.timings('spectral')
+    timer$add('spectral')
 
     #
     # Perform the iterative optimisation procedure NITER times
@@ -157,32 +147,42 @@
         #
         # Update S
         #
-        # Compute the L2 distances between the transpose of the eigenvectors
-        distf = L2_distance_1(t(F_eig1), t(F_eig1))
-        # b contains the indexes (sorting order) vectors for all the same cell
+        # Compute the square of the L2 distances between the columns of the eigenvectors
+        # distf is num x num
+        distf = as.matrix(dist(F_eig1))^2
+        # b contains the indexes (sorting order) vectors ignoring self-similarity
         b = idx[, 2:num]
+        # Construct indexes into the distances
         inda = cbind(rep(1:num, num-1), as.vector(b))
+        # distX contains the weighted kernel distances
+        # Calculate the v_i as in the supplementary material.
+        # Note that in the supplementary material, the equation shows that these are subtracted not added
+        # The supplementary material is wrong, it should be addition.
+        # Also note that the equation uses beta not r in the denominator
         ad = (distX[inda] + lambda * distf[inda]) / 2 / r
+        # Convert the vector ad into a matrix
         dim(ad) = c(num, ncol(b))
         #
         # call the C function for the optimization
+        # This is the piecewise linear and convex optimisation problem mentioned in the supplementary materials.
         c_input = -t(ad)
         c_output = t(ad)
         ad = t(.Call("projsplx_R", c_input, c_output))
-        last.time = add.timings('update.S')
+        timer$add('update.S')
         #
-        # calculate the adjacency matrix
+        # Calculate the adjacency matrix
         A = array(0, c(num, num))
         A[inda] = as.vector(ad)
         # Remove any NaNs
         A[is.nan(A)] = 0
         # Make the adjacency matrix symmetric
         A = (A + t(A)) / 2
+        A
         # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
-        # do network diffusion again (this is not mentioned in the paper or supplementary materials
+        # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
-        last.time = add.timings('diffusion')
+        timer$add('diffusion')
 
         #
         # Update L
@@ -197,7 +197,7 @@
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
         evs_eig1 = cbind(evs_eig1, ev_eig1)
-        last.time = add.timings('spectral')
+        timer$add('spectral')
 
         #
         # Update weights
@@ -210,7 +210,7 @@
         # Smoothed update of the alphaK parameterised by beta
         alphaK = (1 - beta) * alphaK + beta * alphaK0
         alphaK = alphaK / sum(alphaK)
-        last.time = add.timings('update.weights')
+        timer$add('update.weights')
 
         #
         # Test for convergence
@@ -241,7 +241,7 @@
         }
         # Retain S as S_old in case our next iteration is not good and we want to use it
         S_old = S
-        last.time = add.timings('convergence')
+        timer$add('convergence')
 
         #
         # Compute Kbeta, the weighted kernel distances
@@ -254,7 +254,7 @@
         temp = sort.rows(distX)
         distX1 = temp$sorted
         idx = temp$idx
-        last.time = add.timings('sort.distances')
+        timer$add('sort.distances')
     }
 
     #
@@ -268,7 +268,7 @@
     eigen_L = eigen(L)
     U = eigen_L$vectors
     D = eigen_L$values
-    last.time = add.timings('eigen')
+    timer$add('eigen')
 
     #
     # Run t-SNE on the eigenvectors
@@ -281,7 +281,7 @@
     } else {
         F_last = lapply(no.dim, do.tsne)
     }
-    last.time = add.timings('t.SNE.eigen')
+    timer$add('t.SNE.eigen')
 
     #
     # Compute the execution time
@@ -291,13 +291,13 @@
     # Run k-means clustering
     cat("Performing Kmeans.\n")
     y = kmeans(F_last, c, nstart=200)
-    last.time = add.timings('k.means')
+    timer$add('k.means')
 
     #
     # Run t-SNE on S
     cat("Running t-SNE on S.\n")
     ydata = tsne(S)
-    last.time = add.timings('t.SNE.S')
+    timer$add('t.SNE.S')
 
     # create the structure with the results
     return(list(
@@ -307,7 +307,7 @@
         ydata = ydata,
         alphaK = alphaK,
         execution.time = execution.time,
-        timings = timings,
+        timings = timer$get_timings(),
         converge = converge,
         LF = LF))
 }

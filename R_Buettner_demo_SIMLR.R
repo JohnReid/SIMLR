@@ -21,6 +21,8 @@ source("./R/network.diffusion.R")
 source("./R/utils.simlr.R")
 source("./R/tsne.R")
 
+
+
 # load the C file
 
 # NOTE 1: we make use of an external C program during the computations of SIMLR.
@@ -65,12 +67,8 @@ dev.off()
 
 #
 # Show timings
-timings.df <-
-  as.data.frame(t(as.data.frame(lapply(res_example1$timings, data.matrix)))) %>%
-  dplyr::mutate(task = names(res_example1$timings)) %>%
-  dplyr::arrange(-elapsed)
-timings.df
-res_example1$timings$update.weights
+res_example1$timings
+
 #
 # Show NMI
 message('NMI: ', nmi_1)

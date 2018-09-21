@@ -1,22 +1,22 @@
 #' Perform network diffusion of K steps over the network A
 #'
+#' This is called similarity enhancement by diffusion in the paper
+#'
+#' @param A: The distance matrix
+#' @param K: The number of nearest neighbours to consider
+#'
 "network.diffusion" <- function( A, K ) {
 
     # set the values of the diagonal of A to 0
     diag(A) = 0
 
-    # compute the sign matrix of A
-    sign_A = A
-    sign_A[which(A>0,arr.ind=TRUE)] = 1
-    sign_A[which(A<0,arr.ind=TRUE)] = -1
-
     # compute the dominate set for A and K
-    P = dominate.set(abs(A),min(K,nrow(A)-1)) * sign_A
+    P = dominate.set(abs(A), min(K, nrow(A) - 1)) * sign(A)
 
     # sum the absolute value of each row of P
-    DD = apply(abs(P),MARGIN=1,FUN=sum)
+    DD = apply(abs(P), MARGIN = 1, FUN = sum)
 
-    # set DD+1 to the diagonal of P
+    # set the diagonal of P to be DD + 1
     diag(P) = DD + 1
 
     # compute the transition field of P
@@ -35,26 +35,25 @@
     beta = 2
     d = ((1-alpha)*d)/(1-alpha*d^beta)
 
-    # set to D the real part of the diagonal of d
-    D = array(0,c(length(Re(d)),length(Re(d))))
-    diag(D) = Re(d)
+    # set D to be a diagonal matrix of the real part of d
+    D = diag(Re(d))
 
     # finally compute W
     W = U %*% D %*% t(U)
-    diagonal_matrix = array(0,c(nrow(W),ncol(W)))
-    diag(diagonal_matrix) = 1
-    W = (W * (1-diagonal_matrix)) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
+    diagonal_matrix = diag(rep(1, nrow(W)))
+    W = (W * (1 - diagonal_matrix)) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
     diag(D) = diag(D)[length(diag(D)):1]
     W = diag(DD) %*% W
+    # Ensure W wymmetric
     W = (W + t(W)) / 2
-
-    W[which(W<0,arr.ind=TRUE)] = 0
+    # Ensure all W are non-negative
+    W[W < 0] = 0
 
     return(W)
-
 }
 
-# compute the dominate set for the matrix aff.matrix and NR.OF.KNN
+
+#' Compute the dominate set for the matrix aff.matrix and NR.OF.KNN
 "dominate.set" <- function( aff.matrix, NR.OF.KNN ) {
 
     # create the structure to save the results
