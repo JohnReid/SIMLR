@@ -25,6 +25,8 @@ Suggests:
     BiocGenerics,
     BiocStyle,
     tidyverse,
+    pheatmap,
+    RColorBrewer,
     testthat,
     knitr,
     igraph

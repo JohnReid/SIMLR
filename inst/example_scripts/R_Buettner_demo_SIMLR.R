@@ -9,6 +9,8 @@ library(tidyverse)
 #
 # load the SIMLR R package
 devtools::load_all('../..')
+# devtools::build('../..')
+# devtools::document('../..')
 
 #
 # run SIMLR
@@ -17,12 +19,14 @@ cat("Performing analysis for Buettner data","\n")
 .data <- BuettnerFlorian
 output_file <- purrr::partial(file.path, 'output')
 dir.create(output_file('.', showWarnings = FALSE))
-res = SIMLR(X = .data$in_X, c = .data$n_clust)
+res = SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE)
 # Calculate NMI
 nmi_1 = igraph::compare(.data$true_labs[,1], res$y$cluster, method = "nmi")
 
 #
 # Report results
+print('Iterations:')
+print(res$iter)
 print(res$execution.time)
 print('Convergence:')
 print(res$converge)
@@ -33,13 +37,21 @@ print(res$alphaK)
 
 #
 # make the scatter plots
-pdf(output_file('Buettner-scatter.pdf'), width=12, height=8, paper='special')
+pdf(output_file('Buettner-scatter.pdf'), width=9, height=6, paper='special')
 plot(res$ydata,
-     col=c(topo.colors(.data$n_clust))[.data$true_labs[,1]],
-     xlab="SIMLR component 1",
-     ylab="SIMLR component 2",
-     pch=20,
-     main="SIMILR 2D visualization for Buettner data set")
+     # col=c(topo.colors(.data$n_clust))[.data$true_labs[,1]],
+     col = get_palette(3)[.data$true_labs[,1]],
+     xlab = "SIMLR component 1",
+     ylab = "SIMLR component 2",
+     pch = 20,
+     main = "SIMILR 2D visualization for Buettner data set")
+dev.off()
+
+
+#
+# make the heatmaps
+pdf(output_file('Buettner-heatmap.pdf'), width=8, height=8, paper='special')
+similarity.heatmap(res$intermediaries$S[11,,], str_c('cluster ', .data$true_labs[,1]))
 dev.off()
 
 #

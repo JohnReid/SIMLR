@@ -35,6 +35,8 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 #' @param isMax Either return the largest or the smallest eigenvalues (and associated vectors)
 #' @param isSym Is A symmetric?
 #'
+#' @keywords internal
+#'
 "eig1" <- function( A, c = NA, isMax = NA, isSym = NA ) {
 
     # set the needed parameters
@@ -89,6 +91,8 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 #' @param a: First matrix
 #' @param b: Second matrix (same shape as a). If NULL will be taken as equivalent to a.
 #'
+#' @keywords internal
+#'
 "L2_distance_1" <- function( a, b = NULL ) {
     # Add a row of zeros to a if it only has one row
     if(dim(a)[1] == 1) {
@@ -122,6 +126,8 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 #' umkl function
 #'
 #' TODO: It is unclear what this function does
+#'
+#' @keywords internal
 #'
 "umkl" = function( D, beta = NA ) {
 
@@ -191,6 +197,8 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 
 #' Sort each row of X and return the sorted matrix and the ordering vectors
 #'
+#' @keywords internal
+#'
 sort.rows = function(X) {
     sorted = array(0, c(nrow(X), ncol(X)))
     idx = array(0, c(nrow(X), ncol(X)))
@@ -200,4 +208,28 @@ sort.rows = function(X) {
         idx[i,] = res$ix
     }
     return(list(sorted = sorted, idx = idx))
+}
+
+
+#' Get the palette for the given number of categories
+#'
+get_palette <- function(n) {
+  RColorBrewer::brewer.pal(n = n, name = 'Accent')
+}
+
+#' Plot a similarity matrix heatmap
+#'
+#' @keywords internal
+#'
+similarity.heatmap <- function(S, true_labels) {
+  meta = data.frame(true = true_labels)
+  rownames(meta) <- colnames(S) <- rownames(S) <- 1:nrow(S)
+  ann_colors = list(true = RColorBrewer::brewer.pal(n = length(unique(meta$true)), name = 'Accent'))
+  names(ann_colors$true) <- levels(meta$true)
+  pheatmap::pheatmap(S,
+                     annotation_row = meta,
+                     annotation_col = meta,
+                     show_rownames = FALSE,
+                     show_colnames = FALSE,
+                     annotation_colors = ann_colors)
 }
