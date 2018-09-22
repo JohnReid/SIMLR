@@ -24,6 +24,7 @@ Imports:
 Suggests:
     BiocGenerics,
     BiocStyle,
+    tidyverse,
     testthat,
     knitr,
     igraph

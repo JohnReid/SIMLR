@@ -4,19 +4,25 @@
 # Run SIMLR on the Buettner data set
 #
 
+library(tidyverse)
 
 #
 # load the SIMLR R package
 devtools::load_all('../..')
-# devtools::build('../..')
-# devtools::document('../..')
 
 #
-# test SIMLR.R on example 1
+# run SIMLR
 set.seed(11111)
 cat("Performing analysis for Buettner data","\n")
 .data <- BuettnerFlorian
+output_file <- purrr::partial(file.path, 'output')
+dir.create(output_file('.', showWarnings = FALSE))
 res = SIMLR(X = .data$in_X, c = .data$n_clust)
+# Calculate NMI
+nmi_1 = igraph::compare(.data$true_labs[,1], res$y$cluster, method = "nmi")
+
+#
+# Report results
 print(res$execution.time)
 print('Convergence:')
 print(res$converge)
@@ -24,12 +30,10 @@ print('Weights:')
 print(res$alphaK)
 # print('k-means:')
 # print(res$y)
-nmi_1 = igraph::compare(.data$true_labs[,1], res$y$cluster, method="nmi")
 
 #
 # make the scatter plots
-dir.create('tests', showWarnings = FALSE)
-pdf('tests/Buettner-scatter.pdf', width=12, height=8, paper='special')
+pdf(output_file('Buettner-scatter.pdf'), width=12, height=8, paper='special')
 plot(res$ydata,
      col=c(topo.colors(.data$n_clust))[.data$true_labs[,1]],
      xlab="SIMLR component 1",
@@ -39,8 +43,9 @@ plot(res$ydata,
 dev.off()
 
 #
-# Show timings
-res$timings
+# Show and save timings
+print(res$timings)
+readr::write_csv(res$timings, output_file('Buettner-timings.csv'))
 
 #
 # Show NMI
