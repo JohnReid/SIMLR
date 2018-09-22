@@ -1,31 +1,33 @@
 #' perform the SIMLR clustering algorithm
-#' 
+#'
 #' @title SIMLR
 #'
 #' @examples
 #' SIMLR(X = BuettnerFlorian$in_X, c = BuettnerFlorian$n_clust, cores.ratio = 0)
-#' 
+#'
 #' @param X an (m x n) data matrix of gene expression measurements of individual cells or
-#' and object of class SCESet
+#'   an object of class SCESet
 #' @param c number of clusters to be estimated over X
 #' @param no.dim number of dimensions
 #' @param k tuning parameter
 #' @param if.impute should I traspose the input data?
 #' @param normalize should I normalize the input data?
 #' @param cores.ratio ratio of the number of cores to be used when computing the multi-kernel
+#' @param return_intermediaries Return intermediate values of S
 #'
 #' @return clusters the cells based on SIMLR and their similarities
- 
-#' @return list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters: 
-#'		y = results of k-means clusterings,
-#'  	S = similarities computed by SIMLR, 
-#'  	F = results from network diffiusion, 
-#'  	ydata = data referring the the results by k-means,
-#'  	alphaK = clustering coefficients,
-#'  	execution.time = execution time of the present run,
-#'  	converge = iterative convergence values by T-SNE,
-#'  	LF = parameters of the clustering
-#' 
+#'
+#' @return list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters:
+#'    y = results of k-means clusterings,
+#'    S = similarities computed by SIMLR,
+#'    F = results from network diffiusion,
+#'    ydata = data referring the the results by k-means,
+#'    alphaK = clustering coefficients,
+#'    execution.time = execution time of the present run,
+#'    timings = execution times of sub-tasks,
+#'    converge = iterative convergence values by T-SNE,
+#'    LF = parameters of the clustering
+#'
 #' @export SIMLR
 #' @importFrom parallel stopCluster makeCluster detectCores clusterEvalQ
 #' @importFrom parallel parLapply
@@ -34,13 +36,25 @@
 #' @import Matrix
 #' @useDynLib SIMLR projsplx
 #'
-"SIMLR" <- function( X, c, no.dim = NA, k = 10, if.impute = FALSE, normalize = FALSE, cores.ratio = 1 ) {
-
+"SIMLR" <- function(X,
+                    c,
+                    no.dim = NA,
+                    k = 10,
+                    if.impute = FALSE,
+                    normalize = FALSE,
+                    cores.ratio = 1,
+                    return_intermediaries = FALSE )
+{
     # convert SCESet
     if (is(X, "SCESet")) {
-        cat("X is and SCESet, converting to input matrix.\n")
+        cat("X is an SCESet, converting to input matrix.\n")
         X = X@assayData$exprs
     }
+
+    # set some parameters
+    NITER = 30
+    num = ncol(X)
+    beta = 0.8
 
     # Measure execution times of sub-tasks
     timer = CumulativeTimer$new()
@@ -48,6 +62,11 @@
     # set any required parameter to the defaults
     if(is.na(no.dim)) {
         no.dim = c
+    }
+
+    # Check the return intermediaries parameter
+    if( return_intermediaries ) {
+      intermediaries = list(S = array(NA, dim = c(NITER+1, num, num)))
     }
 
     # check the if.impute parameter
@@ -76,11 +95,6 @@
 
     # Remember the time to calculate execution time later
     ptm = proc.time()
-
-    # set some parameters
-    NITER = 30
-    num = ncol(X)
-    beta = 0.8
 
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
@@ -147,6 +161,7 @@
     S0 = network.diffusion(max(distX) - distX, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
+    if( return_intermediaries ) intermediaries$S[0,,] = S
     timer$add('diffusion')
 
     #
@@ -208,6 +223,7 @@
         timer$add('update.S')
         # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
+        if( return_intermediaries ) intermediaries$S[iter,,] = S
         timer$add('diffusion')
 
         #
@@ -324,7 +340,7 @@
     timer$add('t.SNE.S')
 
     # create the structure with the results
-    return(list(
+    result = list(
         y = y,
         S = S,
         F = F_last,
@@ -332,6 +348,11 @@
         alphaK = alphaK,
         execution.time = execution.time,
         timings = timer$get_timings(),
+        iter = iter,
         converge = converge,
-        LF = LF))
+        LF = LF)
+    if( return_intermediaries ) {
+      result$intermediaries = intermediaries
+    }
+    return(result)
 }

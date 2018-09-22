@@ -6,6 +6,8 @@
 #' @param cores.ratio Proportional of all possible cores - 1 to use.
 #' @param calc.dists Normalise kernels and convert to kernel distances
 #'
+#' @keywords internal
+#'
 multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
     D_Kernels = multiple.unnorm.kernels(x, cores.ratio)
     if (calc.dists) {
@@ -20,6 +22,8 @@ multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
 #' Normalise the kernels and convert to kernel distances
 #'
 #' @param D_Kernels The unnormalised kernel (Gram) matrices
+#'
+#' @keywords internal
 #'
 norm.and.calc.dists = function( D_Kernels ) {
     #
@@ -40,6 +44,8 @@ norm.and.calc.dists = function( D_Kernels ) {
 #'
 #' @param x The data (samples x features)
 #' @param cores.ratio Proportional of all possible cores - 1 to use.
+#'
+#' @keywords internal
 #'
 multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
     message('Calculating kernels.')
@@ -106,6 +112,8 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
 
 #' Normalise a kernel
 #'
+#' @keywords internal
+#'
 kernel.normalise = function(K, offset = 1) {
     k = 1 / sqrt(diag(K) + offset)
     return(K * (k %*% t(k)))
@@ -118,6 +126,8 @@ kernel.normalise = function(K, offset = 1) {
 #' returns half the squared kernel distance for some reason.
 #'
 #' @param G The kernel (Gram) matrix
+#'
+#' @keywords internal
 #'
 kernel.distance.2 = function(G) {
     # Construct a matrix where each row is the diagonal of the Gram matrix
@@ -241,6 +251,8 @@ compute.multiple.kernel = function( kernel.type, x1, x2 = NA, kernel.params = NA
 #' compute the single kernel
 #'
 #' NOTE: This function looks like it calculates the squared distance
+#' @keywords internal
+#'
 "dist2" = function( x, c = NA ) {
 
     # set the parameters for x
