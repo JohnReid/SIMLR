@@ -5,11 +5,11 @@
 \title{SIMLR}
 \usage{
 SIMLR(X, c, no.dim = NA, k = 10, if.impute = FALSE,
-  normalize = FALSE, cores.ratio = 1)
+  normalize = FALSE, cores.ratio = 1, return_intermediaries = FALSE)
 }
 \arguments{
 \item{X}{an (m x n) data matrix of gene expression measurements of individual cells or
-and object of class SCESet}
+an object of class SCESet}
 
 \item{c}{number of clusters to be estimated over X}
 
@@ -22,19 +22,22 @@ and object of class SCESet}
 \item{normalize}{should I normalize the input data?}
 
 \item{cores.ratio}{ratio of the number of cores to be used when computing the multi-kernel}
+
+\item{return_intermediaries}{Return intermediate values of S}
 }
 \value{
 clusters the cells based on SIMLR and their similarities
 
-list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters: 
-	y = results of k-means clusterings,
- 	S = similarities computed by SIMLR, 
- 	F = results from network diffiusion, 
- 	ydata = data referring the the results by k-means,
- 	alphaK = clustering coefficients,
- 	execution.time = execution time of the present run,
- 	converge = iterative convergence values by T-SNE,
- 	LF = parameters of the clustering
+list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters:
+   y = results of k-means clusterings,
+   S = similarities computed by SIMLR,
+   F = results from network diffiusion,
+   ydata = data referring the the results by k-means,
+   alphaK = clustering coefficients,
+   execution.time = execution time of the present run,
+   timings = execution times of sub-tasks,
+   converge = iterative convergence values by T-SNE,
+   LF = parameters of the clustering
 }
 \description{
 perform the SIMLR clustering algorithm
