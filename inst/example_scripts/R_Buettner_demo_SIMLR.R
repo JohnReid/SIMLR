@@ -49,12 +49,13 @@ dev.off()
 
 #
 # Make a heatmap of S
-# devtools::load_all('../..')
+devtools::load_all('../..')
 pdf(output_file('Buettner-heatmap.pdf'), width=8, height=8, paper='special')
 similarity.heatmap(res$S,
                    label = str_c('label ', .data$true_labs[,1]),
                    cluster = str_c('cluster ', res$y$cluster))
 dev.off()
+
 
 #
 # Show and save timings

@@ -209,33 +209,3 @@ sort.rows = function(X) {
     }
     return(list(sorted = sorted, idx = idx))
 }
-
-
-#' Get the palette for the given number of categories
-#'
-#' @keywords internal
-#'
-get_palette <- function(n) {
-  RColorBrewer::brewer.pal(n = n, name = 'Accent')
-}
-
-
-#' Plot a similarity matrix heatmap
-#'
-#' @keywords internal
-#'
-similarity.heatmap <- function(S, ...) {
-  meta = data.frame(...)
-  rownames(meta) <- colnames(S) <- rownames(S) <- 1:nrow(S)
-  ann_colors = list(
-      label = RColorBrewer::brewer.pal(n = length(unique(meta$label)), name = 'Accent'),
-      cluster = RColorBrewer::brewer.pal(n = length(unique(meta$cluster)), name = 'Paired'))
-  names(ann_colors$label) <- levels(meta$label)
-  names(ann_colors$cluster) <- levels(meta$cluster)
-  pheatmap::pheatmap(S,
-                     annotation_row = meta,
-                     annotation_col = meta,
-                     show_rownames = FALSE,
-                     show_colnames = FALSE,
-                     annotation_colors = ann_colors)
-}
