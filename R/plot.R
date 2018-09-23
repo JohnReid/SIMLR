@@ -18,7 +18,7 @@ similarity.heatmap <- function(
   cluster = NULL,
   color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name = 'RdYlBu')))(100),
   label_colors = NULL,
-  label_palette = 'Accent',
+  label_palette = 'Set3',
   cluster_colors = NULL,
   cluster_palette = 'Paired')
 {
@@ -42,7 +42,12 @@ similarity.heatmap <- function(
   if( ! is.null(label) ) {
     meta$label = factor(label)
     if( is.null(label_colors) ) {
-      label_colors <- RColorBrewer::brewer.pal(n = length(unique(meta$label)), name = label_palette)
+      label_colors <- RColorBrewer::brewer.pal(n = nlevels(meta$label), name = label_palette)
+    }
+    if( length(label_colors) < nlevels(meta$label) ) {
+      stop(sprintf(
+        'Not enough colours in palette (%d) for the number of labels (%d)',
+        length(label_colors), nlevels(meta$label)))
     }
     ann_colors$label <- label_colors
     names(ann_colors[['label']]) <- levels(meta$label)
@@ -52,7 +57,12 @@ similarity.heatmap <- function(
   if( ! is.null(cluster) ) {
     meta$cluster = factor(cluster)
     if( is.null(cluster_colors) ) {
-      cluster_colors <- RColorBrewer::brewer.pal(n = length(unique(meta$cluster)), name = cluster_palette)
+      cluster_colors <- RColorBrewer::brewer.pal(n = nlevels(meta$cluster), name = cluster_palette)
+    }
+    if( length(cluster_colors) < nlevels(meta$cluster) ) {
+      stop(sprintf(
+        'Not enough colours in palette (%d) for the number of clusters (%d)',
+        length(cluster_colors), nlevels(meta$cluster)))
     }
     ann_colors$cluster <- cluster_colors
     names(ann_colors$cluster) <- levels(meta$cluster)
