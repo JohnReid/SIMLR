@@ -376,13 +376,24 @@ apply_SIMLR <- function(
   data_set,
   res = NULL,  # Pre-generated results
   output_dir = file.path('output', data_set),
-  max_intermediaries = 6)
+  max_intermediaries = 6,
+  max_samples = 300)
 {
   #
   # run SIMLR
   if( is.null(res) ) {
     message("Running SIMLR")
     res = SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE)
+  }
+
+  #
+  # Number of samples
+  num <- nrow(res$S)
+  sample_idxs <- 1:num
+  if( ! is.null(max_samples) && num > max_samples ) {
+    # Maintain order as this tends to improve the plots
+    sample_idxs <- sort(sample(num, size = max_samples))
+    print(sample_idxs)
   }
 
   #
@@ -431,9 +442,9 @@ apply_SIMLR <- function(
   # Make a grid of the intermediate S
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$S[iter,,],
-                             label = stringr::str_c('label ', .data$true_labs[,1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+    ph <- similarity.heatmap(res$intermediaries$S[iter, sample_idxs, sample_idxs],
+                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
                              annotation_legend = FALSE,
                              annotation_names_col = FALSE,
                              cluster_rows = FALSE,
@@ -448,9 +459,9 @@ apply_SIMLR <- function(
   # Make a grid of the intermediate S after network diffusion
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$Snd[iter,,],
-                             label = stringr::str_c('label ', .data$true_labs[,1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+    ph <- similarity.heatmap(res$intermediaries$Snd[iter, sample_idxs, sample_idxs],
+                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
                              annotation_legend = FALSE,
                              annotation_names_col = FALSE,
                              cluster_rows = FALSE,
@@ -465,9 +476,9 @@ apply_SIMLR <- function(
   # Make a grid of the intermediate distances
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$dists[iter,,],
-                             label = stringr::str_c('label ', .data$true_labs[,1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+    ph <- similarity.heatmap(res$intermediaries$dists[iter, sample_idxs, sample_idxs],
+                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
                              annotation_legend = FALSE,
                              annotation_names_col = FALSE,
                              cluster_rows = FALSE,
