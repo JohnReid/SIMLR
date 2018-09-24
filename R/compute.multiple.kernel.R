@@ -52,7 +52,7 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
     #
     # compute some parameters from the kernels
     N = dim(x)[1]
-    sigma = seq(2,1,-0.25)
+    sigma = seq(2, 1, -0.25)
     #
     # compute and sort Diff
     Diff = dist2(x)^2  # Diff is the square of the squared distance (i.e. power of 4)
@@ -62,7 +62,7 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
     # compute the combined kernels
     m = dim(Diff)[1]
     n = dim(Diff)[2]
-    allk = seq(10,30,2)
+    allk = seq(10, 30, 2)
 
     #
     # Choose how many cores we will use for parallelisation

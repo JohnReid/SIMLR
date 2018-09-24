@@ -68,6 +68,7 @@
     if( return_intermediaries ) {
       intermediaries = list(
         S = array(NA, dim = c(NITER+1, num, num)),
+        alphaK = array(NA, dim = c(NITER, 11 * 5)),
         dists = array(NA, dim = c(NITER+1, num, num)))
     }
 
@@ -98,25 +99,26 @@
     # Remember the time to calculate execution time later
     ptm = proc.time()
 
+    #
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
     D_Kernels = multiple.kernel(t(X), cores.ratio)
-    timer$add('calc.distances')
-
-    #
-    # set up some parameters
     #
     # alphaK looks like a Dirichlet prior: 1 / # categories
+    # that is even weights across the kernels
     alphaK = 1 / rep(length(D_Kernels), length(D_Kernels))
+    if( return_intermediaries ) intermediaries$alphaK[1,] = alphaK
     #
     # distX is the average of the distances
     distX = Reduce("+", D_Kernels) / length(D_Kernels)
     if( return_intermediaries ) intermediaries$dists[1,,] = as.matrix(distX)
+    timer$add('calc.distances')
     #
     # sort each row of distX into distX1 and retain the ordering vectors in idx
     temp = sort.rows(distX)
     distX1 = temp$sorted
     idx = temp$idx
+    timer$add('sort.distances')
 
     #
     # Use data to determine lambda
@@ -255,6 +257,7 @@
         # Smoothed update of the alphaK parameterised by beta
         alphaK = (1 - beta) * alphaK + beta * alphaK0
         alphaK = alphaK / sum(alphaK)
+        if( return_intermediaries ) intermediaries$alphaK[iter + 1,] = alphaK
         timer$add('update.weights')
 
         #
@@ -454,6 +457,30 @@ apply_SIMLR <- function(
     plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
   }
   ggplot2::ggsave(output_file("dists-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+
+  #
+  # Plot the intermediate weights
+  #
+  # Hard-code these as they are hard-coded elsewhere
+  allk <- seq(10, 30, 2)
+  sigma <- seq(2, 1, -0.25)
+  kernels <- data.frame(
+    kernel = 1:55,
+    k = factor(rep(allk, each = length(sigma))),
+    sigma = factor(rep(sigma, length(allk))))
+  #
+  # Melt the intermediate weights
+  alphaK <-
+    reshape2::melt(
+      res$intermediaries$alphaK[1:(res$iter+1),],
+      varnames=c('iter', 'kernel'),
+      value.name = 'weight') %>%
+    left_join(kernels)
+  alphaK %>% sample_n(15)
+  #
+  # Make the plot
+  ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
+  ggplot2::ggsave(output_file("alphaK-intermediaries.pdf"))
 
   #
   # Show NMI

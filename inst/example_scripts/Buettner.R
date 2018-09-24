@@ -14,4 +14,4 @@ devtools::load_all('../..')
 #
 # Run SIMLR
 set.seed(11111)
-res <- apply_SIMLR(res = NULL, .data = Buettner, data_set = 'Buettner')
+res <- apply_SIMLR(res = res, .data = Buettner, data_set = 'Buettner')

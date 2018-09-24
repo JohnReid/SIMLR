@@ -16,6 +16,7 @@ Imports:
     stats,
     methods,
     dplyr,
+    reshape2,
     R6,
     Rcpp,
     pracma,
