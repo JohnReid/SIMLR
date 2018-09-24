@@ -8,10 +8,10 @@
 #'
 #' @keywords internal
 #'
-multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
-    D_Kernels = multiple.unnorm.kernels(x, cores.ratio)
+multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE, offset = 1, dist_power = 2 ) {
+    D_Kernels = multiple.unnorm.kernels(x, cores.ratio, dist_power)
     if (calc.dists) {
-        D_Kernels = norm.and.calc.dists(D_Kernels)
+        D_Kernels = norm.and.calc.dists(D_Kernels, offset = offset )
     }
     #
     # Return the distances/kernels
@@ -25,15 +25,16 @@ multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE ) {
 #'
 #' @keywords internal
 #'
-norm.and.calc.dists = function( D_Kernels ) {
+norm.and.calc.dists = function( D_Kernels, offset = 1 ) {
     #
     # Normalise the kernels, calculate the kernel distances and convert to sparse matrices
     message('Calculating distances.')
     # for (i in 1:length(D_Kernels)) {
     #     D_Kernels[[i]] = Matrix(kernel.distance.2(kernel.normalise(D_Kernels[[i]])), sparse=TRUE, doDiag=FALSE)
     # }
-    D_Kernels = lapply(D_Kernels,
-                       function(G) Matrix(kernel.distance.2(kernel.normalise(G)), sparse=TRUE, doDiag=FALSE))
+    D_Kernels = lapply(
+      D_Kernels,
+      function(G) Matrix(kernel.distance.2(kernel.normalise(G, offset = offset)), sparse=TRUE, doDiag=FALSE))
     return(D_Kernels)
 }
 
@@ -43,36 +44,28 @@ norm.and.calc.dists = function( D_Kernels ) {
 #' Compute the kernels for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
 #'
 #' @param x The data (samples x features)
+#' @param dist_power The power to raise the distances
 #' @param cores.ratio Proportional of all possible cores - 1 to use.
 #'
 #' @keywords internal
 #'
-multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
+multiple.unnorm.kernels = function( x, cores.ratio = 1, dist_power = 2 ) {
     message('Calculating kernels.')
     #
-    # compute some parameters from the kernels
-    N = dim(x)[1]
-    sigma = seq(2, 1, -0.25)
+    # Kernel parameters
+    sigma = default_sigma()
+    allk = default_k()
+
     #
     # compute and sort Diff
-    Diff = dist2(x)^2  # Diff is the square of the squared distance (i.e. power of 4)
+    Diff = dist2(x)^dist_power  # Diff is the square of the squared distance (i.e. power of 4)
     Diff_sort = t(apply(Diff,MARGIN=2,FUN=sort))  # Sort the rows to help with kNN later
 
     #
-    # compute the combined kernels
-    m = dim(Diff)[1]
-    n = dim(Diff)[2]
-    allk = seq(10, 30, 2)
-
+    # Set up the cluster to parallelise the kernel calculations
     #
     # Choose how many cores we will use for parallelisation
-    cores = as.integer(cores.ratio * (detectCores() - 1))
-    if (cores < 1 || is.na(cores) || is.null(cores)) {
-        cores = 1
-    }
-
-    #
-    # Set up the cluster to parallelise the kernel calculations
+    cores <- cores_from_ratio(cores.ratio)
     cl = makeCluster(cores)
     clusterEvalQ(cl, {library(Matrix)})
     # The parallel apply runs over all the k for the kNN
@@ -85,7 +78,7 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
                 #
                 # Calculate the mean of the k-nearest-neighbours,
                 # this is mu_i in the paper Eqn. (4)
-                TT = apply(.Diff_sort[,2:(k+1)], MARGIN=1, FUN=mean) + .Machine$double.eps
+                TT = apply(.Diff_sort[, 2:(k+1)], MARGIN=1, FUN=mean) + .Machine$double.eps
                 #
                 # Do an outer average
                 # this is (mu_i + mu_j) / 2 in the paper Eqn. (4)
@@ -97,7 +90,7 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1 ) {
                 # Construct a kernel for each scaling sigma
                 sigma_kernels <- lapply(.sigma, FUN=function(sigma) {
                     # N.B. .Diff == the squared squared distance (i.e. power of 4)
-                    W = dnorm(.Diff, 0, sigma*Sig)
+                    W = dnorm(.Diff, 0, sigma * Sig)
                     return(Matrix((W + t(W)) / 2, sparse=TRUE, doDiag=FALSE))
                 })
                 return(sigma_kernels)
@@ -277,3 +270,17 @@ compute.multiple.kernel = function( kernel.type, x1, x2 = NA, kernel.params = NA
     return(dist)
 
 }
+
+
+#' The default parameter set for sigma
+#'
+#' @keywords internal
+#'
+default_sigma <- function() seq(2, 1, -0.25)
+
+
+#' The default parameter set for k
+#'
+#' @keywords internal
+#'
+default_k <- function() seq(10, 30, 2)

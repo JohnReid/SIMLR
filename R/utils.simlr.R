@@ -1,4 +1,9 @@
+#' A class to measure cumulative time across sub-tasks.
+#'
 #' @importFrom magrittr %>%
+#'
+#' @keywords internal
+#'
 CumulativeTimer <- R6::R6Class("CumulativeTimer",
   public = list(
     last_time = NULL,
@@ -237,4 +242,17 @@ kernel_param_map <- function() {
     kernel = 1:55,
     k = factor(rep(allk, each = length(sigma))),
     sigma = factor(rep(sigma, length(allk)))))
+}
+
+
+#' Calculate how many cores from the ratio
+#'
+#' @keywords internal
+#'
+cores_from_ratio <- function(cores.ratio) {
+  cores = as.integer(cores.ratio * (detectCores() - 1))
+  if (cores < 1 || is.na(cores) || is.null(cores)) {
+    cores = 1
+  }
+  return(cores)
 }

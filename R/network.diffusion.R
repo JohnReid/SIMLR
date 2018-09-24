@@ -4,8 +4,9 @@
 #'
 #' @param A: The distance matrix
 #' @param K: The number of nearest neighbours to consider
+#' @param scale_by_DD: Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc()
 #'
-"network.diffusion" <- function( A, K ) {
+network.diffusion <- function( A, K, scale_by_DD = TRUE ) {
 
     # set the values of the diagonal of A to 0
     diag(A) = 0
@@ -42,9 +43,11 @@
     W = U %*% D %*% t(U)
     diagonal_matrix = diag(rep(1, nrow(W)))
     W = (W * (1 - diagonal_matrix)) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
-    diag(D) = diag(D)[length(diag(D)):1]
-    W = diag(DD) %*% W
-    # Ensure W wymmetric
+    if( scale_by_DD ) {
+      # This line is missing in network.diffusion.numc()
+      W = diag(DD) %*% W
+    }
+    # Ensure W symmetric
     W = (W + t(W)) / 2
     # Ensure all W are non-negative
     W[W < 0] = 0
