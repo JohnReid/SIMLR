@@ -19,5 +19,5 @@ data_set <- 'Buettner'
 
 #
 # Run and summarise SIMLR
-res <- run_SIMLR(.data = .data)
-summarise_SIMLR(res = res, .data = .data, data_set = data_set)
+res <- SIMLR::run_SIMLR(.data = .data)
+SIMLR::summarise_SIMLR(res = res, .data = .data, data_set = data_set)

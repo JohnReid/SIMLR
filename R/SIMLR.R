@@ -433,7 +433,6 @@ summarise_SIMLR <- function(
 
   #
   # Make a heatmap of S
-  # devtools::load_all('../..')
   pdf(output_file('heatmap.pdf'), width=8, height=8, paper='special')
   similarity.heatmap(res$S,
                     label = stringr::str_c('label ', .data$true_labs[,1]),
@@ -446,58 +445,44 @@ summarise_SIMLR <- function(
   readr::write_csv(res$timings %>% dplyr::mutate(data.set = data_set, niter = res$iter), output_file('timings.csv'))
 
   #
+  # A function to find out how many intermediate iterations we have
+  find_last_non_na <- function(x) max(which(! is.na(x)))
+
+  #
+  # A function to plot an intermediary similarity/distance matrix
+  plot_intermediary <- function(X) {
+    last_iter <- find_last_non_na(X[, 1, 1])
+    plot_list <- lapply(
+      approx_spaced_integers(1, last_iter, max_intermediaries),
+      function(iter) {
+        similarity.heatmap(X[iter, sample_idxs, sample_idxs],
+                           label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
+                           # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
+                           annotation_legend = FALSE,
+                           annotation_names_col = FALSE,
+                           cluster_rows = FALSE,
+                           cluster_cols = FALSE,
+                           legend = FALSE,
+                           main = iter,
+                           silent = TRUE)[[4]]
+      })
+    do.call(gridExtra::grid.arrange, plot_list)
+  }
+
+  #
   # Make a grid of the intermediate S
   message('Plotting intermediate S')
-  plot_list = list()
-  for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$S[iter, sample_idxs, sample_idxs],
-                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
-                             annotation_legend = FALSE,
-                             annotation_names_col = FALSE,
-                             cluster_rows = FALSE,
-                             cluster_cols = FALSE,
-                             legend = FALSE,
-                             main = iter)
-    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
-  }
-  ggsave(output_file("S-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("S-intermediaries.pdf"), plot_intermediary(res$intermediaries$S))
 
   #
   # Make a grid of the intermediate S after network diffusion
   message('Plotting diffused intermediate S')
-  plot_list = list()
-  for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$Snd[iter, sample_idxs, sample_idxs],
-                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
-                             annotation_legend = FALSE,
-                             annotation_names_col = FALSE,
-                             cluster_rows = FALSE,
-                             cluster_cols = FALSE,
-                             legend = FALSE,
-                             main = iter)
-    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
-  }
-  ggsave(output_file("S-diffused-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("S-diffused-intermediaries.pdf"), plot_intermediary(res$intermediaries$Snd))
 
   #
   # Make a grid of the intermediate distances
   message('Plotting intermediate distances')
-  plot_list = list()
-  for (iter in approx_spaced_integers(1, res$iter, max_intermediaries)) {
-    ph <- similarity.heatmap(res$intermediaries$dists[iter, sample_idxs, sample_idxs],
-                             label = stringr::str_c('label ', .data$true_labs[sample_idxs, 1]),
-                             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
-                             annotation_legend = FALSE,
-                             annotation_names_col = FALSE,
-                             cluster_rows = FALSE,
-                             cluster_cols = FALSE,
-                             legend = FALSE,
-                             main = iter)
-    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
-  }
-  ggsave(output_file("dists-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("dists-intermediaries.pdf"), plot_intermediary(res$intermediaries$dists))
 
   #
   # Plot the intermediate weights
