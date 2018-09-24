@@ -381,6 +381,8 @@ run_SIMLR <- function(.data)
 
 
 #' Summarise the results of the SIMLR algorithm
+#
+#' @import ggplot2
 #'
 #' @keywords internal
 #'
@@ -459,7 +461,7 @@ summarise_SIMLR <- function(
                              main = iter)
     plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
   }
-  ggplot2::ggsave(output_file("S-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("S-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
 
   #
   # Make a grid of the intermediate S after network diffusion
@@ -477,7 +479,7 @@ summarise_SIMLR <- function(
                              main = iter)
     plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
   }
-  ggplot2::ggsave(output_file("S-diffused-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("S-diffused-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
 
   #
   # Make a grid of the intermediate distances
@@ -495,7 +497,7 @@ summarise_SIMLR <- function(
                              main = iter)
     plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
   }
-  ggplot2::ggsave(output_file("dists-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+  ggsave(output_file("dists-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
 
   #
   # Plot the intermediate weights
@@ -514,11 +516,11 @@ summarise_SIMLR <- function(
   #
   # Make the plot
   ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
-  ggplot2::ggsave(output_file("alphaK-intermediaries.pdf"))
+  ggsave(output_file("alphaK-intermediaries.pdf"))
 
   #
   # Show NMI
   message('NMI: ', nmi_1)
 
-  return(res)
+  invisible(res)
 }

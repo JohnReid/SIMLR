@@ -6,8 +6,8 @@
 \usage{
 similarity.heatmap(S, samples = NULL, label = NULL, cluster = NULL,
   color = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name =
-  "RdYlBu")))(100), label_colors = NULL, label_palette = "Accent",
-  cluster_colors = NULL, cluster_palette = "Paired")
+  "RdYlBu")))(100), label_colors = NULL, label_palette = "Set3",
+  cluster_colors = NULL, cluster_palette = "Paired", ...)
 }
 \description{
 Plot a similarity matrix heatmap
