@@ -209,3 +209,16 @@ sort.rows = function(X) {
     }
     return(list(sorted = sorted, idx = idx))
 }
+
+
+#' Return a vector of integers from from to to that are approximately evenly spaced
+#'
+#' @keywords internal
+#'
+approx_spaced_integers <- function(from, to, max_length) {
+  result <- from:to
+  if( ! is.null(max_length) && length(result) > max_length ) {
+    result <- round(seq(from, to, length.out = max_length))
+  }
+  return(result)
+}

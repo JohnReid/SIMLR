@@ -20,7 +20,8 @@ similarity.heatmap <- function(
   label_colors = NULL,
   label_palette = 'Set3',
   cluster_colors = NULL,
-  cluster_palette = 'Paired')
+  cluster_palette = 'Paired',
+  ...)
 {
   #
   # Check matrix is square
@@ -76,5 +77,6 @@ similarity.heatmap <- function(
                      annotation_col = meta %>% dplyr::select(-sample),
                      show_rownames = FALSE,
                      show_colnames = FALSE,
-                     annotation_colors = ann_colors)
+                     annotation_colors = ann_colors,
+                     ...)
 }

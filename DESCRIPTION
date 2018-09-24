@@ -25,6 +25,8 @@ Suggests:
     BiocGenerics,
     BiocStyle,
     tidyverse,
+    gridExtra,
+    ggplot2,
     pheatmap,
     RColorBrewer,
     testthat,

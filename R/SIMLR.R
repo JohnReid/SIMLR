@@ -66,7 +66,9 @@
 
     # Check the return intermediaries parameter
     if( return_intermediaries ) {
-      intermediaries = list(S = array(NA, dim = c(NITER+1, num, num)))
+      intermediaries = list(
+        S = array(NA, dim = c(NITER+1, num, num)),
+        dists = array(NA, dim = c(NITER+1, num, num)))
     }
 
     # check the if.impute parameter
@@ -109,6 +111,7 @@
     #
     # distX is the average of the distances
     distX = Reduce("+", D_Kernels) / length(D_Kernels)
+    if( return_intermediaries ) intermediaries$dists[1,,] = as.matrix(distX)
     #
     # sort each row of distX into distX1 and retain the ordering vectors in idx
     temp = sort.rows(distX)
@@ -161,7 +164,7 @@
     S0 = network.diffusion(max(distX) - distX, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
-    if( return_intermediaries ) intermediaries$S[0,,] = S
+    if( return_intermediaries ) intermediaries$S[1,,] = S
     timer$add('diffusion')
 
     #
@@ -223,7 +226,7 @@
         timer$add('update.S')
         # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
-        if( return_intermediaries ) intermediaries$S[iter,,] = S
+        if( return_intermediaries ) intermediaries$S[iter + 1,,] = S
         timer$add('diffusion')
 
         #
@@ -289,6 +292,7 @@
         # Compute the weighted kernel distances
         #
         distX = Reduce("+", lapply(1:length(D_Kernels), function(i) D_Kernels[[i]] * alphaK[i]))
+        if( return_intermediaries ) intermediaries$dists[iter + 1,,] = as.matrix(distX)
         #
         # We need the sorted distances updated according to the new weights
         # sort each row of distX into distX1 and retain the ordering vectors in idx
@@ -360,11 +364,19 @@
 
 #' Apply the SIMLR algorithm to a data set and summarise the results
 #'
-apply_SIMLR <- function(.data, data_set, output_dir = file.path('output', data_set)) {
+apply_SIMLR <- function(
+  .data,
+  data_set,
+  res = NULL,  # Pre-generated results
+  output_dir = file.path('output', data_set),
+  max_intermediaries = 6)
+{
   #
   # run SIMLR
-  message("Running SIMLR")
-  res = SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE)
+  if( is.null(res) ) {
+    message("Running SIMLR")
+    res = SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE)
+  }
 
   #
   # Calculate NMI
@@ -407,6 +419,41 @@ apply_SIMLR <- function(.data, data_set, output_dir = file.path('output', data_s
   # Show and save timings
   print(res$timings)
   readr::write_csv(res$timings %>% dplyr::mutate(data.set = data_set, niter = res$iter), output_file('timings.csv'))
+
+  #
+  # Make a grid of the intermediate S
+  plot_list = list()
+  for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
+    ph <- similarity.heatmap(res$intermediaries$S[iter,,],
+                             label = stringr::str_c('label ', .data$true_labs[,1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+                             annotation_legend = FALSE,
+                             annotation_names_col = FALSE,
+                             cluster_rows = FALSE,
+                             cluster_cols = FALSE,
+                             legend = FALSE,
+                             main = iter)
+    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
+  }
+  ggplot2::ggsave(output_file("S-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+
+  #
+  # Make a grid of the intermediate distances
+  plot_list = list()
+  for (iter in approx_spaced_integers(1, res$iter, max_intermediaries)) {
+    print(iter)
+    ph <- similarity.heatmap(res$intermediaries$dists[iter,,],
+                             label = stringr::str_c('label ', .data$true_labs[,1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+                             annotation_legend = FALSE,
+                             annotation_names_col = FALSE,
+                             cluster_rows = FALSE,
+                             cluster_cols = FALSE,
+                             legend = FALSE,
+                             main = iter)
+    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
+  }
+  ggplot2::ggsave(output_file("dists-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
 
   #
   # Show NMI
