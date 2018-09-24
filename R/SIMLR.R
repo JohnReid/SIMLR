@@ -69,7 +69,7 @@
       intermediaries = list(
         S = array(NA, dim = c(NITER+1, num, num)),
         Snd = array(NA, dim = c(NITER+1, num, num)),
-        alphaK = array(NA, dim = c(NITER, 11 * 5)),
+        alphaK = array(NA, dim = c(NITER+1, 11 * 5)),
         dists = array(NA, dim = c(NITER+1, num, num)))
     }
 
