@@ -68,6 +68,7 @@
     if( return_intermediaries ) {
       intermediaries = list(
         S = array(NA, dim = c(NITER+1, num, num)),
+        Snd = array(NA, dim = c(NITER+1, num, num)),
         alphaK = array(NA, dim = c(NITER, 11 * 5)),
         dists = array(NA, dim = c(NITER+1, num, num)))
     }
@@ -160,13 +161,15 @@
     #
     # Initialise S, of course this is nothing like as described in the paper
     #
+    # Remember distX is the average of the kernel distances
+    S = max(distX) - distX
+    if( return_intermediaries ) intermediaries$S[1,,] = as.matrix(S)
     # Perform network diffusion
     cat("Performing network diffusion.\n")
-    # Remember distX is the average of the kernel distances
-    S0 = network.diffusion(max(distX) - distX, k)
+    S0 = network.diffusion(S, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
-    if( return_intermediaries ) intermediaries$S[1,,] = S
+    if( return_intermediaries ) intermediaries$Snd[1,,] = S
     timer$add('diffusion')
 
     #
@@ -225,10 +228,11 @@
         A
         # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
+        if( return_intermediaries ) intermediaries$S[iter + 1,,] = S
         timer$add('update.S')
         # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
-        if( return_intermediaries ) intermediaries$S[iter + 1,,] = S
+        if( return_intermediaries ) intermediaries$Snd[iter + 1,,] = S
         timer$add('diffusion')
 
         #
@@ -441,10 +445,26 @@ apply_SIMLR <- function(
   ggplot2::ggsave(output_file("S-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
 
   #
+  # Make a grid of the intermediate S after network diffusion
+  plot_list = list()
+  for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
+    ph <- similarity.heatmap(res$intermediaries$Snd[iter,,],
+                             label = stringr::str_c('label ', .data$true_labs[,1]),
+                             # cluster = stringr::str_c('cluster ', res$y$cluster),
+                             annotation_legend = FALSE,
+                             annotation_names_col = FALSE,
+                             cluster_rows = FALSE,
+                             cluster_cols = FALSE,
+                             legend = FALSE,
+                             main = iter)
+    plot_list[[length(plot_list) + 1]] <- ph[[4]]  # to save each plot into a list. note the [[4]]
+  }
+  ggplot2::ggsave(output_file("S-diffused-intermediaries.pdf"), do.call(gridExtra::grid.arrange, plot_list))
+
+  #
   # Make a grid of the intermediate distances
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter, max_intermediaries)) {
-    print(iter)
     ph <- similarity.heatmap(res$intermediaries$dists[iter,,],
                              label = stringr::str_c('label ', .data$true_labs[,1]),
                              # cluster = stringr::str_c('cluster ', res$y$cluster),
