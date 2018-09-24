@@ -369,23 +369,29 @@
 }
 
 
-#' Apply the SIMLR algorithm to a data set and summarise the results
+#' Apply the SIMLR algorithm to a data set
 #'
-apply_SIMLR <- function(
+#' @keywords internal
+#'
+run_SIMLR <- function(.data)
+{
+  message("Running SIMLR")
+  return(SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE))
+}
+
+
+#' Summarise the results of the SIMLR algorithm
+#'
+#' @keywords internal
+#'
+summarise_SIMLR <- function(
+  res,
   .data,
   data_set,
-  res = NULL,  # Pre-generated results
   output_dir = file.path('output', data_set),
   max_intermediaries = 6,
   max_samples = 300)
 {
-  #
-  # run SIMLR
-  if( is.null(res) ) {
-    message("Running SIMLR")
-    res = SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE)
-  }
-
   #
   # Number of samples
   num <- nrow(res$S)
@@ -393,7 +399,6 @@ apply_SIMLR <- function(
   if( ! is.null(max_samples) && num > max_samples ) {
     # Maintain order as this tends to improve the plots
     sample_idxs <- sort(sample(num, size = max_samples))
-    print(sample_idxs)
   }
 
   #
@@ -440,6 +445,7 @@ apply_SIMLR <- function(
 
   #
   # Make a grid of the intermediate S
+  message('Plotting intermediate S')
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
     ph <- similarity.heatmap(res$intermediaries$S[iter, sample_idxs, sample_idxs],
@@ -457,6 +463,7 @@ apply_SIMLR <- function(
 
   #
   # Make a grid of the intermediate S after network diffusion
+  message('Plotting diffused intermediate S')
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter + 1, max_intermediaries)) {
     ph <- similarity.heatmap(res$intermediaries$Snd[iter, sample_idxs, sample_idxs],
@@ -474,6 +481,7 @@ apply_SIMLR <- function(
 
   #
   # Make a grid of the intermediate distances
+  message('Plotting intermediate distances')
   plot_list = list()
   for (iter in approx_spaced_integers(1, res$iter, max_intermediaries)) {
     ph <- similarity.heatmap(res$intermediaries$dists[iter, sample_idxs, sample_idxs],
@@ -491,14 +499,10 @@ apply_SIMLR <- function(
 
   #
   # Plot the intermediate weights
+  message('Plotting intermediate weights')
   #
-  # Hard-code these as they are hard-coded elsewhere
-  allk <- seq(10, 30, 2)
-  sigma <- seq(2, 1, -0.25)
-  kernels <- data.frame(
-    kernel = 1:55,
-    k = factor(rep(allk, each = length(sigma))),
-    sigma = factor(rep(sigma, length(allk))))
+  # Get a mapping from kernel indices to parameters
+  kernels <- kernel_param_map()
   #
   # Melt the intermediate weights
   alphaK <-
@@ -506,7 +510,7 @@ apply_SIMLR <- function(
       res$intermediaries$alphaK[1:(res$iter+1),],
       varnames=c('iter', 'kernel'),
       value.name = 'weight') %>%
-    left_join(kernels)
+    dplyr::left_join(kernels)
   alphaK %>% sample_n(15)
   #
   # Make the plot

@@ -12,6 +12,12 @@ devtools::load_all('../..')
 # ls('package:SIMLR')
 
 #
-# Run SIMLR
+# Configure
 set.seed(11111)
-res <- apply_SIMLR(res = NULL, .data = Buettner, data_set = 'Buettner')
+.data <- Buettner
+data_set <- 'Buettner'
+
+#
+# Run and summarise SIMLR
+res <- run_SIMLR(.data = .data)
+summarise_SIMLR(res = res, .data = .data, data_set = data_set)

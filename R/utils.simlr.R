@@ -222,3 +222,19 @@ approx_spaced_integers <- function(from, to, max_length) {
   }
   return(result)
 }
+
+
+#' Return a data frame containing the kernel parameters.
+#'
+#' @keywords internal
+#'
+kernel_param_map <- function() {
+  #
+  # Hard-code these as they are hard-coded elsewhere
+  allk <- seq(10, 30, 2)
+  sigma <- seq(2, 1, -0.25)
+  return(data.frame(
+    kernel = 1:55,
+    k = factor(rep(allk, each = length(sigma))),
+    sigma = factor(rep(sigma, length(allk)))))
+}
