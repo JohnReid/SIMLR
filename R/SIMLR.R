@@ -511,7 +511,6 @@ summarise_SIMLR <- function(
       varnames=c('iter', 'kernel'),
       value.name = 'weight') %>%
     dplyr::left_join(kernels)
-  alphaK %>% sample_n(15)
   #
   # Make the plot
   ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
