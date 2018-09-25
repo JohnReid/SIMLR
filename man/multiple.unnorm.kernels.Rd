@@ -4,12 +4,14 @@
 \alias{multiple.unnorm.kernels}
 \title{Compute and returns multiple unnormalised kernels}
 \usage{
-multiple.unnorm.kernels(x, cores.ratio = 1)
+multiple.unnorm.kernels(x, cl, dist_power = 2)
 }
 \arguments{
 \item{x}{The data (samples x features)}
 
-\item{cores.ratio}{Proportional of all possible cores - 1 to use.}
+\item{cl}{Cluster to run parallel tasks on}
+
+\item{dist_power}{The power to raise the distances}
 }
 \description{
 Compute the kernels for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)

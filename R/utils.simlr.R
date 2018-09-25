@@ -204,7 +204,7 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 #'
 #' @keywords internal
 #'
-sort.rows = function(X) {
+sort.rows = function(X, cl) {
     sorted = array(0, c(nrow(X), ncol(X)))
     idx = array(0, c(nrow(X), ncol(X)))
     for(i in 1:nrow(X)) {
@@ -220,13 +220,7 @@ sort.rows = function(X) {
 #'
 #' @keywords internal
 #'
-order.rows = function(X, return.sorted = TRUE) {
-    idx = array(NA, c(nrow(X), ncol(X)))
-    for(i in 1:nrow(X)) {
-        idx[i,] = order(X[i,])
-    }
-    return(idx)
-}
+order.rows = function(X, cl) t(parApply(cl, X, MARGIN = 1, FUN = order))
 
 
 #' Return a vector of integers from from to to that are approximately evenly spaced
@@ -268,4 +262,21 @@ cores_from_ratio <- function(cores.ratio) {
     cores = 1
   }
   return(cores)
+}
+
+
+#' Set up the cluster to parallelise the kernel calculations
+#'
+#' @param cores.ratio Proportional of all possible cores - 1 to use.
+#'
+#' @keywords internal
+#'
+start_cluster <- function(num.cores = 0, cores.ratio = 1) {
+  if( ! num.cores ) {
+    # Choose how many cores we will use for parallelisation
+    num.cores <- cores_from_ratio(cores.ratio)
+  }
+  cl = makeCluster(num.cores)
+  clusterEvalQ(cl, {library(Matrix)})
+  return(cl)
 }

@@ -4,12 +4,10 @@
 \alias{multiple.kernel}
 \title{Compute and returns the multiple kernel distances}
 \usage{
-multiple.kernel(x, cores.ratio = 1, calc.dists = TRUE)
+multiple.kernel(x, cl, calc.dists = TRUE, offset = 1, dist_power = 2)
 }
 \arguments{
 \item{x}{The data (samples x features)}
-
-\item{cores.ratio}{Proportional of all possible cores - 1 to use.}
 
 \item{calc.dists}{Normalise kernels and convert to kernel distances}
 }

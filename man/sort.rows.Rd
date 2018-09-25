@@ -4,7 +4,7 @@
 \alias{sort.rows}
 \title{Sort each row of X and return the sorted matrix and the ordering vectors}
 \usage{
-\method{sort}{rows}(X)
+\method{sort}{rows}(X, cl)
 }
 \description{
 Sort each row of X and return the sorted matrix and the ordering vectors

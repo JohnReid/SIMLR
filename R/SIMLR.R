@@ -30,7 +30,7 @@
 #'
 #' @export SIMLR
 #' @importFrom parallel stopCluster makeCluster detectCores clusterEvalQ
-#' @importFrom parallel parLapply
+#' @importFrom parallel parLapply parSapply parRapply parApply
 #' @importFrom stats dnorm kmeans pbeta rnorm
 #' @importFrom methods is
 #' @import Matrix
@@ -92,9 +92,13 @@ SIMLR <- function(X,
     ptm = proc.time()
 
     #
+    # Start a cluster for parallel tasks
+    cl = start_cluster( cores.ratio )
+
+    #
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
-    D_Kernels = multiple.kernel(t(X), cores.ratio)
+    D_Kernels = multiple.kernel(t(X), cl = cl)
     #
     # Create arrays to store intermediaries if requested to
     if( return_intermediaries ) {
@@ -118,7 +122,7 @@ SIMLR <- function(X,
     timer$add('calc.distances')
     #
     # sort each row of distX into distX1 and retain the ordering vectors in idx
-    temp = sort.rows(distX)
+    temp = sort.rows(distX, cl = cl)
     distX1 = temp$sorted
     idx = temp$idx
     timer$add('sort.distances')
@@ -313,7 +317,7 @@ SIMLR <- function(X,
         if( return_intermediaries ) intermediaries$dists[iter + 1,,] = as.matrix(distX)
         #
         # Order the distances
-        idx = order.rows(distX)
+        idx = order.rows(distX, cl = cl)
         timer$add('sort.distances')
     }
 
@@ -357,6 +361,10 @@ SIMLR <- function(X,
     cat("Running t-SNE on S.\n")
     ydata = tsne(S)
     timer$add('t.SNE.S')
+
+    #
+    # Stop the cluster
+    stopCluster(cl)
 
     # create the structure with the results
     result = list(

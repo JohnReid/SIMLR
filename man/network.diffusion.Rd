@@ -4,12 +4,14 @@
 \alias{network.diffusion}
 \title{Perform network diffusion of K steps over the network A}
 \usage{
-network.diffusion(A, K)
+network.diffusion(A, K, scale_by_DD = TRUE)
 }
 \arguments{
 \item{A:}{The distance matrix}
 
 \item{K:}{The number of nearest neighbours to consider}
+
+\item{scale_by_DD:}{Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc()}
 }
 \description{
 This is called similarity enhancement by diffusion in the paper

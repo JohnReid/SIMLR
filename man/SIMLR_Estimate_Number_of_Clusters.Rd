@@ -14,11 +14,11 @@ SIMLR_Estimate_Number_of_Clusters(X, NUMC = 2:5, cores.ratio = 1)
 \item{cores.ratio}{ratio of the number of cores to be used when computing the multi-kernel}
 }
 \value{
-a list of 2 elements: K1 and K2 with an estimation of the best clusters (the lower 
+a list of 2 elements: K1 and K2 with an estimation of the best clusters (the lower
 values the better) as discussed in the original paper of SIMLR
 }
 \description{
-estimate the number of clusters by means of two huristics as discussed in the SIMLR paper
+Estimate the number of clusters by means of two heuristics as discussed in the SIMLR paper
 }
 \examples{
 

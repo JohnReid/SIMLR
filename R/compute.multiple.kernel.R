@@ -3,13 +3,12 @@
 #' Compute the kernel distances for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
 #'
 #' @param x The data (samples x features)
-#' @param cores.ratio Proportional of all possible cores - 1 to use.
 #' @param calc.dists Normalise kernels and convert to kernel distances
 #'
 #' @keywords internal
 #'
-multiple.kernel = function( x, cores.ratio = 1, calc.dists = TRUE, offset = 1, dist_power = 2 ) {
-    D_Kernels = multiple.unnorm.kernels(x, cores.ratio, dist_power)
+multiple.kernel = function( x, cl, calc.dists = TRUE, offset = 1, dist_power = 2 ) {
+    D_Kernels = multiple.unnorm.kernels(x, cl = cl, dist_power = dist_power)
     if (calc.dists) {
         D_Kernels = norm.and.calc.dists(D_Kernels, offset = offset )
     }
@@ -44,12 +43,12 @@ norm.and.calc.dists = function( D_Kernels, offset = 1 ) {
 #' Compute the kernels for the hard-wired range sigma (bandwidth scaling) and k (nearest-neighbours)
 #'
 #' @param x The data (samples x features)
+#' @param cl Cluster to run parallel tasks on
 #' @param dist_power The power to raise the distances
-#' @param cores.ratio Proportional of all possible cores - 1 to use.
 #'
 #' @keywords internal
 #'
-multiple.unnorm.kernels = function( x, cores.ratio = 1, dist_power = 2 ) {
+multiple.unnorm.kernels = function( x, cl, dist_power = 2 ) {
     message('Calculating kernels.')
     #
     # Kernel parameters
@@ -61,13 +60,6 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1, dist_power = 2 ) {
     Diff = dist2(x)^dist_power  # Diff is the square of the squared distance (i.e. power of 4)
     Diff_sort = t(apply(Diff,MARGIN=2,FUN=sort))  # Sort the rows to help with kNN later
 
-    #
-    # Set up the cluster to parallelise the kernel calculations
-    #
-    # Choose how many cores we will use for parallelisation
-    cores <- cores_from_ratio(cores.ratio)
-    cl = makeCluster(cores)
-    clusterEvalQ(cl, {library(Matrix)})
     # The parallel apply runs over all the k for the kNN
     D_Kernels = unlist(parLapply(
         cl,
@@ -96,7 +88,6 @@ multiple.unnorm.kernels = function( x, cores.ratio = 1, dist_power = 2 ) {
                 return(sigma_kernels)
             }
         }))
-    stopCluster(cl)
     #
     # Return the kernels
     return(D_Kernels)

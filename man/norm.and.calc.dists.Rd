@@ -4,7 +4,7 @@
 \alias{norm.and.calc.dists}
 \title{Normalise the kernels and convert to kernel distances}
 \usage{
-norm.and.calc.dists(D_Kernels)
+norm.and.calc.dists(D_Kernels, offset = 1)
 }
 \arguments{
 \item{D_Kernels}{The unnormalised kernel (Gram) matrices}
