@@ -268,9 +268,10 @@ SIMLR <- function(X,
         #
         # Update weights
         #
-        DD = sapply(
-            D_Kernels,
-            function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps), MARGIN = 2, FUN = sum)))
+        DD = parSapply(
+            cl = cl,
+            X = D_Kernels,
+            FUN = function(DK) sum(.Machine$double.eps + DK * (S + .Machine$double.eps)) / ncol(DK))
         alphaK0 = umkl(DD)
         alphaK0 = alphaK0 / sum(alphaK0)
         # Smoothed update of the alphaK parameterised by beta

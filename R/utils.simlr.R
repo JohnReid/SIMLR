@@ -134,7 +134,7 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
 #'
 #' @keywords internal
 #'
-"umkl" = function( D, beta = NA ) {
+umkl = function( D, beta = NA ) {
 
     # set some parameters
     if(is.na(beta)) {
@@ -183,11 +183,10 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
     }
 
     return(thisP)
-
 }
 
 
-"Hbeta" = function( D, beta ) {
+Hbeta = function( D, beta ) {
 
     D = (D - min(D)) / (max(D) - min(D) + .Machine$double.eps)
     P = exp(-D * beta)
@@ -196,7 +195,6 @@ CumulativeTimer <- R6::R6Class("CumulativeTimer",
     P = P / sumP
 
     return(list(H=H,P=P))
-
 }
 
 
