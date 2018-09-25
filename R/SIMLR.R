@@ -36,14 +36,14 @@
 #' @import Matrix
 #' @useDynLib SIMLR projsplx
 #'
-"SIMLR" <- function(X,
-                    c,
-                    no.dim = NA,
-                    k = 10,
-                    if.impute = FALSE,
-                    normalize = FALSE,
-                    cores.ratio = 1,
-                    return_intermediaries = FALSE )
+SIMLR <- function(X,
+                  c,
+                  no.dim = NA,
+                  k = 10,
+                  if.impute = FALSE,
+                  normalize = FALSE,
+                  cores.ratio = 1,
+                  return_intermediaries = FALSE )
 {
     # convert SCESet
     if (is(X, "SCESet")) {
