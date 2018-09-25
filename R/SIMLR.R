@@ -64,15 +64,6 @@
         no.dim = c
     }
 
-    # Check the return intermediaries parameter
-    if( return_intermediaries ) {
-      intermediaries = list(
-        S = array(NA, dim = c(NITER+1, num, num)),
-        Snd = array(NA, dim = c(NITER+1, num, num)),
-        alphaK = array(NA, dim = c(NITER, 11 * 5)),
-        dists = array(NA, dim = c(NITER+1, num, num)))
-    }
-
     # check the if.impute parameter
     if(if.impute == TRUE) {
         X = t(X)
@@ -104,6 +95,17 @@
     # compute the kernel distances
     cat("Computing the multiple Kernels.\n")
     D_Kernels = multiple.kernel(t(X), cores.ratio)
+    #
+    # Create arrays to store intermediaries if requested to
+    if( return_intermediaries ) {
+      intermediaries = list(
+        S = array(NA, dim = c(NITER+1, num, num)),
+        Snd = array(NA, dim = c(NITER+1, num, num)),
+        Lvec =  array(NA, dim = c(NITER+1, c, num)),
+        Lval =  array(NA, dim = c(NITER+1, c)),
+        alphaK = array(NA, dim = c(NITER, length(D_Kernels))),
+        dists = array(NA, dim = c(NITER+1, num, num)))
+    }
     #
     # alphaK looks like a Dirichlet prior: 1 / # categories
     # that is even weights across the kernels
@@ -184,7 +186,10 @@
     # F_eig1 is L or at least related to L
     F_eig1 = eig1_res$eigvec
     temp_eig1 = eig1_res$eigval
-    evs_eig1 = eig1_res$eigval_full
+    if( return_intermediaries ) {
+      intermediaries$Lvec[1,,] = F_eig1
+      intermediaries$Lval[1,] = temp_eig1
+    }
     timer$add('update.L')
 
     #
@@ -247,7 +252,10 @@
         F_eig1 = eig1_res$eigvec
         temp_eig1 = eig1_res$eigval
         ev_eig1 = eig1_res$eigval_full
-        evs_eig1 = cbind(evs_eig1, ev_eig1)
+        if( return_intermediaries ) {
+          intermediaries$Lvec[iter + 1,,] = F_eig1
+          intermediaries$Lval[iter + 1,] = temp_eig1
+        }
         timer$add('update.L')
 
         #
@@ -395,6 +403,15 @@ summarise_SIMLR <- function(
   max_samples = 300)
 {
   #
+  # Create output directory if needs be
+  output_file <- purrr::partial(file.path, output_dir)
+  dir.create(output_file('.'), recursive = TRUE, showWarnings = FALSE)
+
+  #
+  # Save results to output
+  saveRDS(res, output_file('SIMLR-results.rds'))
+
+  #
   # Number of samples
   num <- nrow(res$S)
   sample_idxs <- 1:num
@@ -419,8 +436,6 @@ summarise_SIMLR <- function(
 
   #
   # Scatter plot of dimensionality reduction
-  output_file <- purrr::partial(file.path, output_dir)
-  dir.create(output_file('.'), recursive = TRUE, showWarnings = FALSE)
   pdf(output_file('scatter.pdf'), width=9, height=6, paper='special')
   plot(res$ydata,
       col = get_palette(3)[.data$true_labs[,1]],
@@ -492,9 +507,10 @@ summarise_SIMLR <- function(
   kernels <- kernel_param_map()
   #
   # Melt the intermediate weights
+  iter <- find_last_non_na(res$intermediaries$alphaK[, 1])
   alphaK <-
     reshape2::melt(
-      res$intermediaries$alphaK[1:(res$iter+1),],
+      res$intermediaries$alphaK[1:iter,],
       varnames=c('iter', 'kernel'),
       value.name = 'weight') %>%
     dplyr::left_join(kernels)
@@ -502,6 +518,19 @@ summarise_SIMLR <- function(
   # Make the plot
   ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
   ggsave(output_file("alphaK-intermediaries.pdf"))
+
+  #
+  # Plot the eigenvalues
+  iter <- find_last_non_na(res$intermediaries$Lval[, 1])
+  eigvals <-
+    reshape2::melt(
+      res$intermediaries$Lval[1:iter,],
+      varnames=c('iter', 'eigenvector'),
+      value.name = 'eigenvalue')
+  #
+  # Make the plot
+  ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
+  ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
 
   #
   # Show NMI
