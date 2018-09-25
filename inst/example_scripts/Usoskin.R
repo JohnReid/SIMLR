@@ -4,6 +4,13 @@
 # Run SIMLR on the neuronal data set from Usoskin et al.
 #
 
+library(tidyverse)
+library(ggthemes)
+
+theme_set(theme_few())
+scale_colour_discrete <- function(...) scale_colour_few()
+scale_fill_discrete <- function(...) scale_fill_few()
+
 #
 # load the SIMLR R package
 # devtools::document('../..')
