@@ -128,6 +128,9 @@
     #
     # di contains the distances to the (k+1) nearest neighbours
     di = distX1[,2:(k+2)]
+    #
+    # We don't use distX1 further down
+    rm(distX1)
     # rr is half the difference between k times the k+1'th nearest neighbour distance and
     # the sum of the k nearest neighbour distances
     rr = 0.5 * (k * di[, k+1] - apply(di[, 1:k], MARGIN = 1, FUN = sum))
@@ -309,11 +312,8 @@
         distX = Reduce("+", lapply(1:length(D_Kernels), function(i) D_Kernels[[i]] * alphaK[i]))
         if( return_intermediaries ) intermediaries$dists[iter + 1,,] = as.matrix(distX)
         #
-        # We need the sorted distances updated according to the new weights
-        # sort each row of distX into distX1 and retain the ordering vectors in idx
-        temp = sort.rows(distX)
-        distX1 = temp$sorted
-        idx = temp$idx
+        # Order the distances
+        idx = order.rows(distX)
         timer$add('sort.distances')
     }
 

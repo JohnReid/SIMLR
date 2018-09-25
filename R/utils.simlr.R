@@ -216,6 +216,19 @@ sort.rows = function(X) {
 }
 
 
+#' Order each row of X and return the ordering vectors
+#'
+#' @keywords internal
+#'
+order.rows = function(X, return.sorted = TRUE) {
+    idx = array(NA, c(nrow(X), ncol(X)))
+    for(i in 1:nrow(X)) {
+        idx[i,] = order(X[i,])
+    }
+    return(idx)
+}
+
+
 #' Return a vector of integers from from to to that are approximately evenly spaced
 #'
 #' @keywords internal
