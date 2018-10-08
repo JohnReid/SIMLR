@@ -107,7 +107,7 @@ SIMLR <- function(X,
         Snd = array(NA, dim = c(NITER+1, num, num)),
         Lvec =  array(NA, dim = c(NITER+1, c, num)),
         Lval =  array(NA, dim = c(NITER+1, c)),
-        alphaK = array(NA, dim = c(NITER, length(D_Kernels))),
+        alphaK = array(NA, dim = c(NITER+1, length(D_Kernels))),
         dists = array(NA, dim = c(NITER+1, num, num)))
     }
     #
