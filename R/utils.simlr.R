@@ -202,15 +202,28 @@ Hbeta = function( D, beta ) {
 #'
 #' @keywords internal
 #'
-sort.rows = function(X, cl) {
-    sorted = array(0, c(nrow(X), ncol(X)))
-    idx = array(0, c(nrow(X), ncol(X)))
-    for(i in 1:nrow(X)) {
-        res = sort(X[i,], index.return = TRUE)
-        sorted[i,] = res$x
-        idx[i,] = res$ix
-    }
-    return(list(sorted = sorted, idx = idx))
+sort.rows = function(X, cl, decreasing = FALSE) {
+  sorted = array(0, c(nrow(X), ncol(X)))
+  idx = array(0, c(nrow(X), ncol(X)))
+  for(i in 1:nrow(X)) {
+    res = sort(X[i,], index.return = TRUE, decreasing = decreasing)
+    sorted[i,] = res$x
+    idx[i,] = res$ix
+  }
+  return(list(sorted = sorted, idx = idx))
+}
+
+#' Return a vector of the same length as x, where all elements that are less
+#' than the k'th largest of x are 0. Other elements are untouched.
+#'
+#' @keywords internal
+#'
+zero_vec <- function(x, k) {
+  res <- rep(0, length(x))
+  partial <- length(x) - k + 1
+  idxs <- x >= sort(x, partial = partial)[partial]
+  res[idxs] <- x[idxs]
+  return(res)
 }
 
 
