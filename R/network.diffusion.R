@@ -71,17 +71,17 @@ dominate.set <- function( aff.matrix, NR.OF.KNN ) {
 }
 
 
-
-#' compute the transition field of the given matrix
+#' Compute the transition field of the given matrix
 #'
 #' @keywords internal
 #'
 transition.fields <- function( W )
 {
-    # get any index of columns with all 0s
-    zero.index = which(apply(W,MARGIN=1,FUN=sum)==0)
+    # the indexes of rows that sum to 0
+    zero.index = which(apply(W, MARGIN = 1, FUN = sum) == 0)
 
     # compute the transition fields
+    # Normalise W
     W = dn(W, 'ave')
 
     w = sqrt(apply(abs(W),MARGIN=2,FUN=sum)+.Machine$double.eps)
@@ -104,21 +104,9 @@ transition.fields <- function( W )
 #' @keywords internal
 #'
 dn = function( w, type ) {
-    #
-    # Compute the sums of the columns
-    D = apply(w, MARGIN = 2, FUN = sum)
-    #
-    # type "ave" returns D^-1*W
-    if(type=="ave") {
-        wn = diag(1 / D) %*% w
-    }
-    # type "gph" returns D^-1/2*W*D^-1/2
-    else if(type=="gph") {
-        D_temp = diag(1 / sqrt(D))
-        wn = D_temp %*% (w %*% D_temp)
-    }
-    else {
-        stop("Invalid type!")
-    }
-    return(wn)
+  switch(
+    type,
+    ave = t(apply(w, MARGIN = 2, FUN = function(x) x / sum(x))),
+    gph = outer(1 / sqrt(rowSums(w)), 1 / sqrt(colSums(w))) * w,
+    stop("Invalid normalisation type!"))
 }
