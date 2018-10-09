@@ -78,6 +78,9 @@ dominate.set <- function( aff.matrix, NR.OF.KNN ) {
 transition.fields <- function( W )
 {
     # the indexes of rows that sum to 0
+    # I don't believe any rows can sum to 1 as each row contains
+    # all elements of S that are not smaller than the row's k'th
+    # element
     zero.index = which(apply(W, MARGIN = 1, FUN = sum) == 0)
     #
     # Normalise W
@@ -111,7 +114,13 @@ transition.fields <- function( W )
 dn = function( w, type ) {
   switch(
     type,
+    #
+    # ave: divide each element by the sum of its column and transpose the matrix
     ave = t(apply(w, MARGIN = 2, FUN = function(x) x / sum(x))),
+    #
+    # gph: divide each element by the square roots of the sums of its row and column
     gph = outer(1 / sqrt(rowSums(w)), 1 / sqrt(colSums(w))) * w,
+    #
+    # unknown type
     stop("Invalid normalisation type!"))
 }
