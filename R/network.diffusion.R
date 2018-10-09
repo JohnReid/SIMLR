@@ -79,19 +79,24 @@ transition.fields <- function( W )
 {
     # the indexes of rows that sum to 0
     zero.index = which(apply(W, MARGIN = 1, FUN = sum) == 0)
-
-    # compute the transition fields
+    #
     # Normalise W
-    W = dn(W, 'ave')
-
-    w = sqrt(apply(abs(W),MARGIN=2,FUN=sum)+.Machine$double.eps)
-    W = W / t(apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=w}))
-    W = W %*% t(W)
-
+    W <- dn(W, 'ave')
+    #
+    # The square root of the sums of the columns
+    w <- sqrt(apply(abs(W),MARGIN=2,FUN=sum)+.Machine$double.eps)
+    #
+    # Divide each element by the square root of the sum of the absolute value of its column
+    denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
+    W <- W / denom
+    #
+    # Cross product W = W %*% t(W)
+    W <- tcrossprod(W)
+    #
     # set to 0 the elements of zero.index
     W[zero.index,] = 0
     W[,zero.index] = 0
-
+    #
     return(W)
 }
 
