@@ -1,4 +1,7 @@
-
+#' Calculate DD in parallel
+#'
+#' @keywords internal
+#'
 calc.DD.parallel <- function(cl, D_Kernels, S)
   parSapply(
     cl = cl,
@@ -11,15 +14,26 @@ calc.DD.parallel <- function(cl, D_Kernels, S)
                                   MARGIN = 2,
                                   FUN = sum)))
 
+
+#' Calculate DD in serial
+#'
+#' @keywords internal
+#'
 calc.DD.serial <- function(D_Kernels, S)
   sapply(
     D_Kernels,
     function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps), MARGIN = 2, FUN = sum)))
 
 
+#' Calculate DD in parallel if cl is not NULL, in serial if not
+#'
+#' @keywords internal
+#'
 calc.DD <- function(cl, D_Kernels, S) {
-  DD.parallel <- calc.DD.parallel(cl, D_Kernels, S)
-  DD.serial <- calc.DD.serial(D_Kernels, S)
-  message('DD difference: ', max(abs(DD.parallel - DD.serial)))
-  return(DD.parallel)
+  if( is.null(cl) ) {
+    DD <- calc.DD.serial(D_Kernels, S)
+  } else {
+    DD <- calc.DD.parallel(cl, D_Kernels, S)
+  }
+  return(DD)
 }
