@@ -8,7 +8,10 @@
 #'
 #' @keywords internal
 #'
-network.diffusion <- function( A, K, scale_by_DD = TRUE ) {
+network.diffusion <- function(A, K, scale_by_DD = TRUE) {
+
+  # Check our assumptions about arguments are correct
+  stopifnot(all(A >= 0))
 
   # set the values of the diagonal of A to 0
   diag(A) = 0
@@ -75,7 +78,7 @@ dominate.set <- function( aff.matrix, NR.OF.KNN ) {
 #'
 #' @keywords internal
 #'
-transition.fields <- function( W )
+transition.fields <- function(W)
 {
   # the indexes of rows that sum to 0
   # I don't believe any rows can sum to 1 as each row contains
@@ -83,11 +86,15 @@ transition.fields <- function( W )
   # element
   zero.index = which(apply(W, MARGIN = 1, FUN = sum) == 0)
   #
+  # Double check our assumption is correct....
+  stopifnot(length(zero.index) == 0)
+  #
   # Normalise W
   W <- dn(W, 'ave')
   #
-  # The square root of the sums of the columns
-  w <- sqrt(apply(abs(W),MARGIN=2,FUN=sum)+.Machine$double.eps)
+  # The square root of the sums of the columns + eps
+  # w <- sqrt(apply(abs(W), MARGIN = 2, FUN = sum) + .Machine$double.eps)
+  w <- sqrt(Matrix::colSums(abs(W)) + .Machine$double.eps)
   #
   # Divide each element by the square root of the sum of the absolute value of its column
   denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
