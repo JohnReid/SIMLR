@@ -89,8 +89,10 @@ transition.fields <- function( W )
     W = W %*% t(W)
 
     # set to 0 the elements of zero.index
-    W[zero.index,] = 0
-    W[,zero.index] = 0
+    if( length(zero.index) ) {
+      W[zero.index,] = 0
+      W[,zero.index] = 0
+    }
 
     return(W)
 }
@@ -104,9 +106,19 @@ transition.fields <- function( W )
 #' @keywords internal
 #'
 dn = function( w, type ) {
-  switch(
+  #
+  # Compute the sums of the columns
+  D = apply(w, MARGIN = 2, FUN = sum)
+  #
+  # Normalisation depending on type.
+  wn <- switch(
     type,
-    ave = t(apply(w, MARGIN = 2, FUN = function(x) x / sum(x))),
-    gph = outer(1 / sqrt(rowSums(w)), 1 / sqrt(colSums(w))) * w,
+    ave = Diagonal(x = 1 / D) %*% w,
+    gph = {
+      D_temp <- Diagonal(x = 1 / sqrt(D))
+      D_temp %*% (w %*% D_temp)
+    },
     stop("Invalid normalisation type!"))
+  #
+  return(wn)
 }
