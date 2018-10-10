@@ -178,7 +178,7 @@ SIMLR <- function(X,
     S0 = network.diffusion(S, k)
     # Normalise S0 - this will be used as a starting estimate in the optimisation
     S = dn(S0, 'ave')
-    if( return_intermediaries ) intermediaries$Snd[1,,] = S
+    if( return_intermediaries ) intermediaries$Snd[1,,] = as.matrix(S)
     timer$add('diffusion')
 
     #
@@ -240,11 +240,11 @@ SIMLR <- function(X,
         A
         # S is a smoothed version of the old S with the new adjacency
         S = (1 - beta) * S + beta * A
-        if( return_intermediaries ) intermediaries$S[iter + 1,,] = S
+        if( return_intermediaries ) intermediaries$S[iter + 1,,] = as.matrix(S)
         timer$add('update.S')
         # do similarity enhancement by diffusion
         S = network.diffusion(S, k)
-        if( return_intermediaries ) intermediaries$Snd[iter + 1,,] = S
+        if( return_intermediaries ) intermediaries$Snd[iter + 1,,] = as.matrix(S)
         timer$add('diffusion')
 
         #
