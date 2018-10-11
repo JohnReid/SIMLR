@@ -76,6 +76,8 @@ dominate.set <- function( aff.matrix, NR.OF.KNN ) {
 
 #' Compute the transition field of the given matrix
 #'
+#' @importFrom Matrix t tcrossprod Diagonal colSums
+#'
 #' @keywords internal
 #'
 transition.fields <- function(W)
@@ -92,13 +94,10 @@ transition.fields <- function(W)
   # Normalise W
   W <- dn(W, 'ave')
   #
-  # The square root of the sums of the columns + eps
-  # w <- sqrt(apply(abs(W), MARGIN = 2, FUN = sum) + .Machine$double.eps)
-  w <- sqrt(Matrix::colSums(abs(W)) + .Machine$double.eps)
-  #
   # Divide each element by the square root of the sum of the absolute value of its column
-  denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
-  W <- W / denom
+  w <- sqrt(col_sums(abs(W)) + .Machine$double.eps)
+  W <- scale_rows(W, w)
+
   #
   # Cross product W = W %*% t(W)
   W <- tcrossprod(W)
@@ -109,31 +108,71 @@ transition.fields <- function(W)
     W[,zero.index] = 0
   }
   #
-  return(W)
+  return(as.matrix(W))
 }
 
 
-#' Normalizes a symmetric kernel w
+#' Normalizes a symmetric kernel w.
 #'
 #' @param: w The symmetric kernel
 #' @param: type The normalisation type
 #'
 #' @keywords internal
 #'
-dn = function( w, type ) {
+dn <- function(w, type) {
   #
-  # Compute the sums of the columns
-  D = apply(w, MARGIN = 2, FUN = sum)
+  # Column sums to normalise by
+  D <- col_sums(w, 'apply')
   #
   # Normalisation depending on type.
-  wn <- switch(
-               type,
-               ave = Diagonal(x = 1 / D) %*% w,
-               gph = {
-                 D_temp <- Diagonal(x = 1 / sqrt(D))
-                 D_temp %*% (w %*% D_temp)
-               },
-               stop("Invalid normalisation type!"))
-  #
-  return(wn)
+  switch(type,
+         ave = scale_cols(w, D),
+         gph = {
+           D_temp <- Diagonal(x = 1 / sqrt(D))
+           D_temp %*% (w %*% D_temp)
+         },
+         stop("Invalid normalisation type!"))
 }
+
+
+#' Sum the columns
+#'
+#' @keywords internal
+#'
+col_sums <- function(W, method = 'apply')
+  switch(method,
+         'apply' = apply(W, MARGIN = 2, FUN = sum),
+         'colSums' = colSums(W),
+         stop('Unknown method'))
+
+
+#' Scale rows
+#'
+#' @keywords internal
+#'
+scale_rows <- function(W, w, method = 'denom')
+  switch(method,
+         orig = W / t(apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {x = w})),
+         denom = {
+           denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
+           W / denom
+         },
+         dense = as.matrix(W %*% Diagonal(x = 1 / w)),
+         sparse = W %*% Diagonal(x = 1 / w),
+         stop('Unknown method'))
+
+
+#' Scale columns.
+#'
+#' @keywords internal
+#'
+scale_cols <- function(W, w, method = 'multiply')
+  switch(method,
+         orig = {
+           w = 1 / w
+           w_temp = matrix(0, nrow = length(w), ncol = length(w))
+           w_temp[cbind(1:length(w), 1:length(w))] = w
+           w_temp %*% W
+         },
+         multiply = Diagonal(x = 1 / w) %*% W,
+         stop('Unknown method'))
