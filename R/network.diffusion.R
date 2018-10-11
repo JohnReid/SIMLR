@@ -96,8 +96,7 @@ transition.fields <- function(W)
   #
   # Divide each element by the square root of the sum of the absolute value of its column
   w <- sqrt(col_sums(abs(W)) + .Machine$double.eps)
-  W <- scale_rows(W, w)
-
+  W <- scale_cols(W, w)
   #
   # Cross product W = W %*% t(W)
   W <- tcrossprod(W)
@@ -116,20 +115,24 @@ transition.fields <- function(W)
 #'
 #' @param: w The symmetric kernel
 #' @param: type The normalisation type
+#'    \enumerate{
+#'      \item 'ave' Scales the rows by the column sums
+#'      \item 'gph' ??
+#'    }
 #'
 #' @keywords internal
 #'
-dn <- function(w, type) {
+dn <- function(W, type) {
   #
-  # Column sums to normalise by
-  D <- col_sums(w, 'apply')
+  # Scaling factors
+  w <- col_sums(W, 'apply')
   #
   # Normalisation depending on type.
   switch(type,
-         ave = scale_cols(w, D),
+         ave = scale_rows(W, w),
          gph = {
-           D_temp <- Diagonal(x = 1 / sqrt(D))
-           D_temp %*% (w %*% D_temp)
+           w_sqrt <- Diagonal(x = 1 / sqrt(w))
+           w_sqrt %*% (W %*% w_sqrt)
          },
          stop("Invalid normalisation type!"))
 }
@@ -146,33 +149,28 @@ col_sums <- function(W, method = 'apply')
          stop('Unknown method'))
 
 
-#' Scale rows
+#' Scale the columns by w
 #'
 #' @keywords internal
 #'
-scale_rows <- function(W, w, method = 'denom')
+scale_cols <- function(W, w, method = 'denom')
   switch(method,
          orig = W / t(apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {x = w})),
          denom = {
            denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
            W / denom
          },
-         dense = as.matrix(W %*% Diagonal(x = 1 / w)),
+         dense = as.matrix(W) %*% Diagonal(x = 1 / w),
          sparse = W %*% Diagonal(x = 1 / w),
          stop('Unknown method'))
 
 
-#' Scale columns.
+#' Scale the rows by w.
 #'
 #' @keywords internal
 #'
-scale_cols <- function(W, w, method = 'multiply')
+scale_rows <- function(W, w, method = 'sparse')
   switch(method,
-         orig = {
-           w = 1 / w
-           w_temp = matrix(0, nrow = length(w), ncol = length(w))
-           w_temp[cbind(1:length(w), 1:length(w))] = w
-           w_temp %*% W
-         },
-         multiply = Diagonal(x = 1 / w) %*% W,
+         dense = diag(1 / w) %*% W,
+         sparse = Diagonal(x = 1 / w) %*% W,
          stop('Unknown method'))
