@@ -518,27 +518,31 @@ summarise_SIMLR <- function(
                    varnames=c('iter', 'kernel'),
                    value.name = 'weight') %>%
   dplyr::left_join(kernels)
-#
-# Make the plot
-ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
-ggsave(output_file("alphaK-intermediaries.pdf"))
+  #
+  # Make the plot
+  ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
+  ggsave(output_file("alphaK-intermediaries.pdf"))
 
-#
-# Plot the eigenvalues
-iter <- find_last_non_na(res$intermediaries$Lval[, 1])
-eigvals <-
-  reshape2::melt(
-                 res$intermediaries$Lval[1:iter,],
-                 varnames=c('iter', 'eigenvector'),
-                 value.name = 'eigenvalue')
-#
-# Make the plot
-ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
-ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
+  #
+  # Plot the eigenvalues
+  iter <- find_last_non_na(res$intermediaries$Lval[, 1])
+  eigvals <-
+    reshape2::melt(
+                  res$intermediaries$Lval[1:iter,],
+                  varnames=c('iter', 'eigenvector'),
+                  value.name = 'eigenvalue')
+  #
+  # Make the plot
+  ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
+  ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
 
-#
-# Show NMI
-message('NMI: ', nmi_1)
+  #
+  # Show total time
+  message('Total elapsed: ', sum(res$timings$elapsed))
 
-invisible(res)
+  #
+  # Show NMI
+  message('NMI: ', nmi_1)
+
+  invisible(res)
 }
