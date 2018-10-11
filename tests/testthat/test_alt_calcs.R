@@ -40,4 +40,9 @@ test_that("alternative methods", {
   col_sum_methods <- c('apply', 'colSums')
   method_tests(col_sum_methods, compose(as.matrix, partial(col_sums, W_dense)))
   method_tests(col_sum_methods, compose(as.matrix, partial(col_sums, W_sparse)))
+  #
+  # row_sums
+  row_sum_methods <- c('apply', 'rowSums')
+  method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_dense)))
+  method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_sparse)))
 })

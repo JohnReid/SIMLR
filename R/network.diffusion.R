@@ -20,7 +20,7 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   P = dominate.set(abs(A), min(K, nrow(A) - 1)) * sign(A)
 
   # sum the absolute value of each row of P
-  DD = apply(abs(P), MARGIN = 1, FUN = sum)
+  DD = row_sums(abs(P), method = 'apply')
 
   # set the diagonal of P to be DD + 1
   diag(P) = DD + 1
@@ -29,25 +29,22 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   P = transition.fields(P)
 
   # compute the eigenvalues and eigenvectors of P
-  eigen_P = eigen(P)
+  stopifnot(isSymmetric(P))
+  eigen_P <- calc_eigs(P, method = 'eigen')
   U = eigen_P$vectors
   D = eigen_P$values
 
-  # set to d the real part of the diagonal of D
+  # set to d the real part of the diagonal of D + some eps
   d = Re(D + .Machine$double.eps)
 
   # perform the diffusion
   alpha = 0.8
   beta = 2
-  d = ((1-alpha)*d)/(1-alpha*d^beta)
-
-  # set D to be a diagonal matrix of the real part of d
-  D = diag(Re(d))
+  d = ((1 - alpha) * d) / (1 - alpha * d^beta)
 
   # finally compute W
-  W = U %*% D %*% t(U)
-  diagonal_matrix = diag(rep(1, nrow(W)))
-  W = (W * (1 - diagonal_matrix)) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
+  W = U %*% diag(d) %*% t(U)
+  W = (W * (1 - diag(nrow(W)))) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
   if( scale_by_DD ) {
     # This line is missing in network.diffusion.numc()
     W = diag(DD) %*% W
@@ -61,7 +58,7 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
 }
 
 
-#' Compute the dominate set for the matrix aff.matrix and NR.OF.KNN
+#' Calculate the nearest neighbours of each sample.
 #'
 #' Creates a copy of `aff.matrix` such that every element smaller than the k'th
 #' largest in each row is zero'ed. A symmetric version of this matrix is then returned.
@@ -69,8 +66,8 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
 #' @keywords internal
 #'
 dominate.set <- function( aff.matrix, NR.OF.KNN ) {
-  PNN.mine <- apply(aff.matrix, MARGIN = 1, FUN = purrr::partial(zero_vec, k = NR.OF.KNN))
-  return((t(PNN.mine) + PNN.mine) / 2)
+  PNN <- apply(aff.matrix, MARGIN = 1, FUN = purrr::partial(zero_vec, k = NR.OF.KNN))
+  return(as((t(PNN) + PNN) / 2, "dsCMatrix"))
 }
 
 
@@ -95,7 +92,7 @@ transition.fields <- function(W)
   W <- dn(W, 'ave')
   #
   # Divide each element by the square root of the sum of the absolute value of its column
-  w <- sqrt(col_sums(abs(W)) + .Machine$double.eps)
+  w <- sqrt(col_sums(abs(W), 'apply') + .Machine$double.eps)
   W <- scale_cols(W, w)
   #
   # Cross product W = W %*% t(W)
@@ -107,7 +104,7 @@ transition.fields <- function(W)
     W[,zero.index] = 0
   }
   #
-  return(as.matrix(W))
+  return(W)
 }
 
 
@@ -117,7 +114,7 @@ transition.fields <- function(W)
 #' @param: type The normalisation type
 #'    \enumerate{
 #'      \item 'ave' Scales the rows by the column sums
-#'      \item 'gph' ??
+#'      \item 'gph' Scales each element by the square root of its column and row sums
 #'    }
 #'
 #' @keywords internal
@@ -149,6 +146,17 @@ col_sums <- function(W, method = 'apply')
          stop('Unknown method'))
 
 
+#' Sum the rows
+#'
+#' @keywords internal
+#'
+row_sums <- function(W, method = 'apply')
+  switch(method,
+         'apply' = apply(W, MARGIN = 2, FUN = sum),
+         'rowSums' = rowSums(W),
+         stop('Unknown method'))
+
+
 #' Scale the columns by w
 #'
 #' @keywords internal
@@ -173,4 +181,17 @@ scale_rows <- function(W, w, method = 'sparse')
   switch(method,
          dense = diag(1 / w) %*% W,
          sparse = Diagonal(x = 1 / w) %*% W,
+         stop('Unknown method'))
+
+
+#' Calculate eigenvalues of a symmetric matrix P.
+#'
+#' @importFrom Rspectra eigs
+#'
+#' @keywords internal
+#'
+calc_eigs <- function(P, method = 'eigen')
+  switch(method,
+         eigen = eigen(P, symmetric = TRUE),
+         Rspectra = eigs_sym(as(P, 'dgCMatrix'), ncol(P) - 1),  # Will use eigen if asked for all eigendimensions
          stop('Unknown method'))
