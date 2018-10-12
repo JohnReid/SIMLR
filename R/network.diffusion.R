@@ -36,22 +36,27 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   # set to d the real part of the diagonal of D + some eps
   d <- Re(D + .Machine$double.eps)
 
-  # perform the diffusion
+  # Adjustment: down-weight the smaller eigenvalues. Is this the diffusion?
   alpha <- 0.8
   beta <- 2
   d <- ((1 - alpha) * d) / (1 - alpha * d^beta)
 
-  # finally compute W
+  # Reconstruct W from the (adjusted) eigendecomposition
   W <- U %*% diag(d) %*% t(U)
-  W <- (W * (1 - diag(nrow(W)))) / apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {
-    x <- (1 - diag(W))
-  })
+
+  # Do some (weird?) calculation that zeros the diagonal and divides
+  # every other element by the diagonal element on its row
+  W <- divide_rows_by_diag(W)
+
+  # Scale rows by DD if requested
+  # This is missing in network.diffusion.numc()
   if (scale_by_DD) {
-    # This line is missing in network.diffusion.numc()
-    W <- diag(DD) %*% W
+    W <- multiply_rows(DD, W)
   }
+
   # Ensure W symmetric
   W <- (W + t(W)) / 2
+
   # Ensure all W are non-negative
   W[W < 0] <- 0
 
@@ -201,5 +206,44 @@ calc_eigs <- function(P, method = "eigen")
   switch(method,
     eigen = eigen(P, symmetric = TRUE),
     Rspectra = eigs_sym(as(P, "dgCMatrix"), ncol(P) - 1), # Will use eigen if asked for all eigendimensions
+    stop("Unknown method")
+  )
+
+
+#' Divide rows by diagonal
+#'
+#' @keywords internal
+#'
+divide_rows_by_diag <- function(W, method = "sweep") {
+  diagW <- diag(W)
+  diag(W) <- 0
+  switch(method,
+    sweep = sweep(W, MARGIN = 1, STATS = 1 - diagW, FUN = '/'),
+    apply = W / apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) x <- (1 - diagW)),
+    stop("Unknown method")
+  )
+}
+
+
+#' Multiply rows, i.e. do \code{diag(v) %*% X}
+#'
+#' @keywords internal
+#'
+multiply_rows <- function(v, X, method = "sweep")
+  switch(method,
+    sweep = sweep(X, MARGIN = 1, STATS = v, FUN = '*'),
+    diag = diag(v) %*% X,
+    stop("Unknown method")
+  )
+
+
+#' Multiply cols, i.e. do \code{X %*% diag(v)}
+#'
+#' @keywords internal
+#'
+multiply_cols <- function(v, X, method = "sweep")
+  switch(method,
+    sweep = sweep(X, MARGIN = 2, STATS = v, FUN = '*'),
+    diag = X %*% diag(v),
     stop("Unknown method")
   )
