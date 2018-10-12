@@ -11,9 +11,14 @@
 #' @param no.dim number of dimensions
 #' @param k tuning parameter
 #' @param kk number of principal components to be assessed in the PCA
+#' @param beta smoothing parameter (also used to adjust eigenvalues)
+#' @param r_scale factor to scale r by
+#' @param lambda_scale factor to scale lambda by
+#' @param convergence_test_threshold Threshold at which to warn about possibly needing more clusters
 #' @param if.impute should I traspose the input data?
 #' @param normalize should I normalize the input data?
 #' @param cores.ratio ratio of the number of cores to be used when computing the multi-kernel
+#' @param large.scale use version of the algorithm designed for large data
 #' @param return_intermediaries Return intermediate values of S
 #'
 #' @return clusters the cells based on SIMLR and their similarities
@@ -41,8 +46,13 @@ SIMLR <- function(
   X,
   c,
   no.dim = NA,
+  niter = NA,
   k = 10,
   kk = 100,
+  beta = 0.8,
+  r_scale = 1.01,
+  lambda_scale = 1.5,
+  convergence_test_threshold = .2,
   if.impute = FALSE,
   normalize = FALSE,
   cores.ratio = 1,
@@ -55,16 +65,17 @@ SIMLR <- function(
     X <- X@assayData$exprs
   }
 
-  # set some parameters
-  if (large.scale) NITER <- 5
-  else NITER <- 30
+  # Number of cells
   num <- ncol(X)
-  beta <- 0.8
 
   # Measure execution times of sub-tasks
   timer <- CumulativeTimer$new()
 
   # set any required parameter to the defaults
+  if (is.na(niter)) {
+    if (large.scale) niter <- 5
+    else niter <- 30
+  }
   if (is.na(no.dim)) {
     no.dim <- c
   }
@@ -137,12 +148,12 @@ SIMLR <- function(
   # Create arrays to store intermediaries if requested to
   if (return_intermediaries) {
     intermediaries <- list(
-      S = array(NA, dim = c(NITER + 1, dim(D_Kernels[[1]]))),
-      Snd = array(NA, dim = c(NITER + 1, dim(D_Kernels[[1]]))),
-      Lvec = array(NA, dim = c(NITER + 1, c, num)),
-      Lval = array(NA, dim = c(NITER + 1, c)),
-      alphaK = array(NA, dim = c(NITER + 1, length(D_Kernels))),
-      dists = array(NA, dim = c(NITER + 1, dim(D_Kernels[[1]]))))
+      S = array(NA, dim = c(niter + 1, dim(D_Kernels[[1]]))),
+      Snd = array(NA, dim = c(niter + 1, dim(D_Kernels[[1]]))),
+      Lvec = array(NA, dim = c(niter + 1, c, num)),
+      Lval = array(NA, dim = c(niter + 1, c)),
+      alphaK = array(NA, dim = c(niter + 1, length(D_Kernels))),
+      dists = array(NA, dim = c(niter + 1, dim(D_Kernels[[1]]))))
   }
   #
   # alphaK looks like a Dirichlet prior: 1 / # categories
@@ -204,6 +215,9 @@ SIMLR <- function(
   if (return_intermediaries) intermediaries$Snd[1, , ] <- as.matrix(S)
   timer$add("normalise")
 
+  #
+  # Calculate initial L via eigendecomposition of S
+  #
   if (large.scale) {
     S_sparse <- sparseMatrix(i = as.vector(matrix(rep(1:nrow(ind), ncol(ind)))),
                              j = as.vector(ind),
@@ -235,9 +249,10 @@ SIMLR <- function(
   timer$add("update.L")
 
   #
-  # Perform the iterative optimisation procedure NITER times
+  # Perform the iterative optimisation procedure niter times
+  #
   converge <- vector()
-  for (iter in 1:NITER) {
+  for (iter in 1:niter) {
     #
     message("Iteration: ", iter)
     #
@@ -360,8 +375,8 @@ SIMLR <- function(
     if (large.scale) {
 
       # Update parameters
-      lambda <- 1.5 * lambda
-      r <- r / 1.01
+      lambda <- lambda_scale * lambda
+      r <- r / r_scale
 
     } else {
 
@@ -374,18 +389,16 @@ SIMLR <- function(
       if (iter < 10) {
         # Heuristic to increase lambda and reduce r if there is an eigengap in the first 9 iterations
         if (eig_val[length(eig_val)] > 0.000001) {
-          lambda <- 1.5 * lambda
-          r <- r / 1.01
+          lambda <- lambda_scale * lambda
+          r <- r / r_scale
         }
       } else {
         # If the convergence criterion is getting worse
-        print(converge)
-        print(iter)
         if (converge[iter] > converge[iter - 1]) {
           # Use the similarity matrix from the last iteration
           S <- S_old
           # Advise user if the convergence test warrants it
-          if (converge[iter - 1] > 0.2) {
+          if (converge[iter - 1] > convergence_test_threshold) {
             warning("Maybe you should set a larger value of c.")
           }
           # Break out of iteration loop

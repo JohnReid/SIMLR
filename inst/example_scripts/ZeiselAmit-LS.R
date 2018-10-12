@@ -18,7 +18,6 @@ devtools::load_all('../..')
 # Configure
 set.seed(11111)
 .data <- ZeiselAmit
-data_set <- 'ZeiselAmit-LS'
 
 #
 # Estimate number of clusters
@@ -33,9 +32,9 @@ data_set <- 'ZeiselAmit-LS'
 #
 # Run and summarise SIMLR (large scale)
 resLS <- SIMLR::SIMLR_Large_Scale(X = .data$in_X, c = .data$n_clust)
-SIMLR::summarise_SIMLR(res = resLS, .data = .data, data_set = data_set)
+SIMLR::summarise_SIMLR(res = resLS, .data = .data, data_set = 'ZeiselAmit-LS-SIMLR')
 
 #
 # Run and summarise SIMLR
-res <- SIMLR::run_SIMLR(.data = .data)
-SIMLR::summarise_SIMLR(res = res, .data = .data, data_set = 'ZeiselAmit')
+res <- SIMLR::run_SIMLR(.data = .data, large.scale = TRUE)
+SIMLR::summarise_SIMLR(res = res, .data = .data, data_set = 'ZeiselAmit-LS')
