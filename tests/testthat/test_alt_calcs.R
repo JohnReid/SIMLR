@@ -56,4 +56,9 @@ test_that("alternative methods", {
   multiply_cols_methods <- c("diag", "sweep")
   method_tests(multiply_cols_methods, compose(as.matrix, partial(multiply_cols, w, W_dense)))
   method_tests(multiply_cols_methods, compose(as.matrix, partial(multiply_cols, w, W_sparse)))
+  #
+  # laplacian
+  method_names <- c("orig", "apply")
+  method_tests(method_names, compose(as.matrix, partial(laplacian, W_dense)))
+  method_tests(method_names, compose(as.matrix, partial(laplacian, W_sparse)))
 })

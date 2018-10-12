@@ -404,3 +404,18 @@ multiply_cols <- function(v, X, method = "sweep")
     diag = X %*% diag(v),
     stop("Unknown method")
   )
+
+
+#' Calculate Laplacian matrix
+#'
+#' Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
+#' https://en.wikipedia.org/wiki/Laplacian_matrix
+#'
+#' @keywords internal
+#'
+laplacian <- function(S, method = 'orig')
+  switch(method,
+    orig = diag(col_sums(S)) - S,
+    apply = sapply(1:ncol(S), function(i) { x <- S[, i]; x[i] <- x[i] - sum(x); -x }),
+    stop("Unknown method")
+  )

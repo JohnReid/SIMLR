@@ -184,8 +184,7 @@ SIMLR <- function(X,
   #
   # Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
   # https://en.wikipedia.org/wiki/Laplacian_matrix
-  D0 <- diag(apply(S, MARGIN = 2, FUN = sum))
-  L0 <- D0 - S
+  L0 <- laplacian(S)
   #
   # Spectral decomposition of Laplacian - this relates to the largest eigenvalues of S - I_n talked about in the
   # paper
@@ -251,8 +250,7 @@ SIMLR <- function(X,
     #
     # Note that in the code L is the Laplacian matrix and F_eig1 corresponds to L in the paper
     #
-    D <- diag(apply(S, MARGIN = 2, FUN = sum))
-    L <- D - S
+    L <- laplacian(S)
     F_old <- F_eig1
     eig1_res <- eig1(L, c, 0)
     F_eig1 <- eig1_res$eigvec
@@ -321,13 +319,11 @@ SIMLR <- function(X,
   #
   # Calculate the Laplacian matrix
   LF <- F_eig1
-  D <- diag(apply(S, MARGIN = 2, FUN = sum))
-  L <- D - S
+  L <- laplacian(S)
   #
   # compute the eigenvalues and eigenvectors of the Laplacian
   eigen_L <- eigen(L)
   U <- eigen_L$vectors
-  D <- eigen_L$values
   timer$add("eigen")
 
   #
