@@ -37,6 +37,22 @@ CumulativeTimer <-
   )
 
 
+#' Is the matrix square?
+#'
+#' @keywords internal
+#'
+isSquare <- function(X) nrow(X) == ncol(X)
+
+
+#' Adjust eigenvalues (down-weight small values).
+#'
+#' @keywords internal
+#'
+adjust_evals <- function(d, alpha = .8, beta = 2) {
+  (1 - alpha) * d / (1 - alpha * d^beta)
+}
+
+
 #' Compute the eigenvalues and eigenvectors of A
 #'
 #' @param A The matrix to compute the eigenvalues and vectors of

@@ -39,7 +39,7 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   # Adjustment: down-weight the smaller eigenvalues. Is this the diffusion?
   alpha <- 0.8
   beta <- 2
-  d <- ((1 - alpha) * d) / (1 - alpha * d^beta)
+  d <- adjust_evals(d, alpha, beta)
 
   # Reconstruct W from the (adjusted) eigendecomposition
   W <- tcrossprod(multiply_cols(d, U), U)
