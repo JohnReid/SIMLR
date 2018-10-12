@@ -417,7 +417,7 @@ summarise_SIMLR <- function(
 
   #
   # Number of samples
-  num <- nrow(res$S)
+  num <- ncol(.data$in_X)
   sample_idxs <- 1:num
   if (!is.null(max_samples) && num > max_samples) {
     # Maintain order as this tends to improve the plots
@@ -430,12 +430,14 @@ summarise_SIMLR <- function(
 
   #
   # Report results
-  print("Iterations:")
+  message("Iterations:")
   print(res$iter)
   print(res$execution.time)
-  print("Convergence:")
-  print(res$converge)
-  print("Weights:")
+  if (! is.null(res[['converge']])) {
+    message("Convergence:")
+    print(res$converge)
+  }
+  message("Weights:")
   print(res$alphaK)
 
   #
@@ -446,101 +448,109 @@ summarise_SIMLR <- function(
     xlab = "SIMLR component 1",
     ylab = "SIMLR component 2",
     pch = 20,
-    main = "SIMILR 2D visualization"
+    main = "SIMLR 2D visualization"
   )
   dev.off()
 
 
   #
   # Make a heatmap of S
-  pdf(output_file("heatmap.pdf"), width = 8, height = 8, paper = "special")
-  similarity.heatmap(res$S,
-    label = stringr::str_c("label ", .data$true_labs[, 1]),
-    cluster = stringr::str_c("cluster ", res$y$cluster)
-  )
-  dev.off()
-
-  #
-  # Show and save timings
-  print(res$timings)
-  readr::write_csv(res$timings %>% dplyr::mutate(data.set = data_set, niter = res$iter), output_file("timings.csv"))
-
-  #
-  # A function to find out how many intermediate iterations we have
-  find_last_non_na <- function(x) max(which(!is.na(x)))
-
-  #
-  # A function to plot an intermediary similarity/distance matrix
-  plot_intermediary <- function(X) {
-    last_iter <- find_last_non_na(X[, 1, 1])
-    plot_list <- lapply(
-      approx_spaced_integers(1, last_iter, max_intermediaries),
-      function(iter) {
-        similarity.heatmap(X[iter, sample_idxs, sample_idxs],
-          label = stringr::str_c("label ", .data$true_labs[sample_idxs, 1]),
-          # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
-          annotation_legend = FALSE,
-          annotation_names_col = FALSE,
-          cluster_rows = FALSE,
-          cluster_cols = FALSE,
-          legend = FALSE,
-          main = iter,
-          silent = TRUE
-        )[[4]]
-      }
+  if (! is.null(res[['S']])) {
+    pdf(output_file("heatmap.pdf"), width = 8, height = 8, paper = "special")
+    similarity.heatmap(res$S,
+      label = stringr::str_c("label ", .data$true_labs[, 1]),
+      cluster = stringr::str_c("cluster ", res$y$cluster)
     )
-    do.call(gridExtra::grid.arrange, plot_list)
+    dev.off()
   }
 
   #
-  # Make a grid of the intermediate S
-  message("Plotting intermediate S")
-  ggsave(output_file("S-intermediaries.pdf"), plot_intermediary(res$intermediaries$S))
+  # Show and save timings
+  if (! is.null(res[['timings']])) {
+    print(res$timings)
+    readr::write_csv(res$timings %>% dplyr::mutate(data.set = data_set, niter = res$iter), output_file("timings.csv"))
+  }
 
   #
-  # Make a grid of the intermediate S after network diffusion
-  message("Plotting diffused intermediate S")
-  ggsave(output_file("S-diffused-intermediaries.pdf"), plot_intermediary(res$intermediaries$Snd))
+  # Only summarise the intermediaries if we have them
+  if (! is.null(res$intermediaries)) {
+    #
+    # A function to find out how many intermediate iterations we have
+    find_last_non_na <- function(x) max(which(!is.na(x)))
 
-  #
-  # Make a grid of the intermediate distances
-  message("Plotting intermediate distances")
-  ggsave(output_file("dists-intermediaries.pdf"), plot_intermediary(res$intermediaries$dists))
+    #
+    # A function to plot an intermediary similarity/distance matrix
+    plot_intermediary <- function(X) {
+      last_iter <- find_last_non_na(X[, 1, 1])
+      plot_list <- lapply(
+        approx_spaced_integers(1, last_iter, max_intermediaries),
+        function(iter) {
+          similarity.heatmap(X[iter, sample_idxs, sample_idxs],
+            label = stringr::str_c("label ", .data$true_labs[sample_idxs, 1]),
+            # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
+            annotation_legend = FALSE,
+            annotation_names_col = FALSE,
+            cluster_rows = FALSE,
+            cluster_cols = FALSE,
+            legend = FALSE,
+            main = iter,
+            silent = TRUE
+          )[[4]]
+        }
+      )
+      do.call(gridExtra::grid.arrange, plot_list)
+    }
 
-  #
-  # Plot the intermediate weights
-  message("Plotting intermediate weights")
-  #
-  # Get a mapping from kernel indices to parameters
-  kernels <- kernel_param_map()
-  #
-  # Melt the intermediate weights
-  iter <- find_last_non_na(res$intermediaries$alphaK[, 1])
-  alphaK <-
-    reshape2::melt(
-      res$intermediaries$alphaK[1:iter, ],
-      varnames = c("iter", "kernel"),
-      value.name = "weight"
-    ) %>%
-    dplyr::left_join(kernels)
-  #
-  # Make the plot
-  ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
-  ggsave(output_file("alphaK-intermediaries.pdf"))
+    #
+    # Make a grid of the intermediate S
+    message("Plotting intermediate S")
+    ggsave(output_file("S-intermediaries.pdf"), plot_intermediary(res$intermediaries$S))
 
-  #
-  # Plot the eigenvalues
-  iter <- find_last_non_na(res$intermediaries$Lval[, 1])
-  eigvals <-
-    reshape2::melt(
-      res$intermediaries$Lval[1:iter, ],
-      varnames = c("iter", "eigenvector"),
-      value.name = "eigenvalue"
-    )
-  #
-  # Make the plot
-  ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
-  ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
+    #
+    # Make a grid of the intermediate S after network diffusion
+    message("Plotting diffused intermediate S")
+    ggsave(output_file("S-diffused-intermediaries.pdf"), plot_intermediary(res$intermediaries$Snd))
+
+    #
+    # Make a grid of the intermediate distances
+    message("Plotting intermediate distances")
+    ggsave(output_file("dists-intermediaries.pdf"), plot_intermediary(res$intermediaries$dists))
+
+    #
+    # Plot the intermediate weights
+    message("Plotting intermediate weights")
+    #
+    # Get a mapping from kernel indices to parameters
+    kernels <- kernel_param_map()
+    #
+    # Melt the intermediate weights
+    iter <- find_last_non_na(res$intermediaries$alphaK[, 1])
+    alphaK <-
+      reshape2::melt(
+        res$intermediaries$alphaK[1:iter, ],
+        varnames = c("iter", "kernel"),
+        value.name = "weight"
+      ) %>%
+      dplyr::left_join(kernels)
+    #
+    # Make the plot
+    ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
+    ggsave(output_file("alphaK-intermediaries.pdf"))
+
+    #
+    # Plot the eigenvalues
+    iter <- find_last_non_na(res$intermediaries$Lval[, 1])
+    eigvals <-
+      reshape2::melt(
+        res$intermediaries$Lval[1:iter, ],
+        varnames = c("iter", "eigenvector"),
+        value.name = "eigenvalue"
+      )
+    #
+    # Make the plot
+    ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
+    ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
+  }
 
   #
   # Show total time
