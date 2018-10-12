@@ -37,12 +37,5 @@ SIMLR::summarise_SIMLR(res = resLS, .data = .data, data_set = data_set)
 
 #
 # Run and summarise SIMLR
-dim(res$S)
-dim(res$intermediaries$S)
-nrow(res$intermediaries$S[13, 1:5, 1:5])
 res <- SIMLR::run_SIMLR(.data = .data)
-
-devtools::load_all('../..')
 SIMLR::summarise_SIMLR(res = res, .data = .data, data_set = 'ZeiselAmit')
-
-traceback()
