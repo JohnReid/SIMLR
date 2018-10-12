@@ -42,19 +42,19 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   d <- ((1 - alpha) * d) / (1 - alpha * d^beta)
 
   # Reconstruct W from the (adjusted) eigendecomposition
-  W <- U %*% diag(d) %*% t(U)
+  W <- tcrossprod(multiply_cols(d, U), U)
 
   # Do some (weird?) calculation that zeros the diagonal and divides
   # every other element by the diagonal element on its row
   W <- divide_rows_by_diag(W)
 
   # Scale rows by DD if requested
-  # This is missing in network.diffusion.numc()
+  # This is missing in network.diffusion.numc(), i.e. the code that estimates the number of clusters
   if (scale_by_DD) {
     W <- multiply_rows(DD, W)
   }
 
-  # Ensure W symmetric
+  # Ensure W is symmetric
   W <- (W + t(W)) / 2
 
   # Ensure all W are non-negative
