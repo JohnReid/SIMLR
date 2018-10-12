@@ -296,3 +296,111 @@ start_cluster <- function(num.cores = 0, cores.ratio = 1) {
   })
   return(cl)
 }
+
+
+#' Sum the columns
+#'
+#' @keywords internal
+#'
+col_sums <- function(W, method = "apply")
+  switch(method,
+    "apply" = apply(W, MARGIN = 2, FUN = sum),
+    "colSums" = colSums(W),
+    stop("Unknown method")
+  )
+
+
+#' Sum the rows
+#'
+#' @keywords internal
+#'
+row_sums <- function(W, method = "apply")
+  switch(method,
+    "apply" = apply(W, MARGIN = 1, FUN = sum),
+    "rowSums" = rowSums(W),
+    stop("Unknown method")
+  )
+
+
+#' Scale the columns by w
+#'
+#' @keywords internal
+#'
+scale_cols <- function(W, w, method = "denom")
+  switch(method,
+    orig = W / t(apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {
+      x <- w
+    })),
+    denom = {
+      denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
+      W / denom
+    },
+    dense = as.matrix(W) %*% Diagonal(x = 1 / w),
+    sparse = W %*% Diagonal(x = 1 / w),
+    stop("Unknown method")
+  )
+
+
+#' Scale the rows by w.
+#'
+#' @keywords internal
+#'
+scale_rows <- function(W, w, method = "sparse")
+  switch(method,
+    dense = diag(1 / w) %*% W,
+    sparse = Diagonal(x = 1 / w) %*% W,
+    stop("Unknown method")
+  )
+
+
+#' Calculate eigenvalues of a symmetric matrix P.
+#'
+#' @importFrom Rspectra eigs
+#'
+#' @keywords internal
+#'
+calc_eigs <- function(P, method = "eigen")
+  switch(method,
+    eigen = eigen(P, symmetric = TRUE),
+    Rspectra = eigs_sym(as(P, "dgCMatrix"), ncol(P) - 1), # Will use eigen if asked for all eigendimensions
+    stop("Unknown method")
+  )
+
+
+#' Divide rows by diagonal
+#'
+#' @keywords internal
+#'
+divide_rows_by_diag <- function(W, method = "sweep") {
+  diagW <- diag(W)
+  diag(W) <- 0
+  switch(method,
+    sweep = sweep(W, MARGIN = 1, STATS = 1 - diagW, FUN = '/'),
+    apply = W / apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) x <- (1 - diagW)),
+    stop("Unknown method")
+  )
+}
+
+
+#' Multiply rows, i.e. do \code{diag(v) %*% X}
+#'
+#' @keywords internal
+#'
+multiply_rows <- function(v, X, method = "sweep")
+  switch(method,
+    sweep = sweep(X, MARGIN = 1, STATS = v, FUN = '*'),
+    diag = diag(v) %*% X,
+    stop("Unknown method")
+  )
+
+
+#' Multiply cols, i.e. do \code{X %*% diag(v)}
+#'
+#' @keywords internal
+#'
+multiply_cols <- function(v, X, method = "sweep")
+  switch(method,
+    sweep = sweep(X, MARGIN = 2, STATS = v, FUN = '*'),
+    diag = X %*% diag(v),
+    stop("Unknown method")
+  )
