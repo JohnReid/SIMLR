@@ -569,22 +569,24 @@ summarise_SIMLR <- function(
   if (! is.null(res[['ydata']])) {
     .df <- as.data.frame(res$ydata)
     .df$label <- factor(.data$true_labs[, 1])
-    ggplot(.df, aes(x = V1, y = V2, colour = label)) +
+    gp <- ggplot(.df, aes(x = V1, y = V2, colour = label)) +
       xlab("SIMLR component 1") +
       ylab("SIMLR component 2") +
       ggtitle("SIMLR 2D visualization") +
       geom_point()
-    ggsave(output_file("scatter.pdf"))
+    ggsave(output_file("scatter.pdf"), gp)
   }
 
   #
   # Make a heatmap of S
   if (! is.null(res[['S']]) && isSquare(res[['S']])) {
-    ggsave(
-      output_file("heatmap.pdf"),
-      similarity.heatmap(res$S,
-        label = stringr::str_c("label ", .data$true_labs[, 1]),
-        cluster = stringr::str_c("cluster ", res$y$cluster))[[4]])
+
+    gp <- similarity.heatmap(
+      res$S,
+      label = stringr::str_c("label ", .data$true_labs[, 1]),
+      cluster = stringr::str_c("cluster ", res$y$cluster),
+      silent = TRUE)[[4]]
+    ggsave(output_file("heatmap.pdf"), gp)
   }
 
   #
@@ -608,7 +610,8 @@ summarise_SIMLR <- function(
       plot_list <- lapply(
         approx_spaced_integers(1, last_iter, max_intermediaries),
         function(iter) {
-          similarity.heatmap(X[iter, sample_idxs, sample_idxs],
+          similarity.heatmap(
+            X[iter, sample_idxs, sample_idxs],
             label = stringr::str_c("label ", .data$true_labs[sample_idxs, 1]),
             # cluster = stringr::str_c('cluster ', res$y$cluster[sample_idxs]),
             annotation_legend = FALSE,
@@ -628,17 +631,20 @@ summarise_SIMLR <- function(
       #
       # Make a grid of the intermediate S
       message("Plotting intermediate S")
-      ggsave(output_file("S-intermediaries.pdf"), plot_intermediary(res$intermediaries$S))
+      gp <- plot_intermediary(res$intermediaries$S)
+      ggsave(output_file("S-intermediaries.pdf"), gp)
 
       #
       # Make a grid of the intermediate S after network diffusion
       message("Plotting diffused intermediate S")
-      ggsave(output_file("S-diffused-intermediaries.pdf"), plot_intermediary(res$intermediaries$Snd))
+      gp <- plot_intermediary(res$intermediaries$Snd)
+      ggsave(output_file("S-diffused-intermediaries.pdf"), gp)
 
       #
       # Make a grid of the intermediate distances
       message("Plotting intermediate distances")
-      ggsave(output_file("dists-intermediaries.pdf"), plot_intermediary(res$intermediaries$dists))
+      gp <- plot_intermediary(res$intermediaries$dists)
+      ggsave(output_file("dists-intermediaries.pdf"), gp)
     }
 
     #
@@ -659,8 +665,8 @@ summarise_SIMLR <- function(
       dplyr::left_join(kernels)
     #
     # Make the plot
-    ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
-    ggsave(output_file("alphaK-intermediaries.pdf"))
+    gp <- ggplot(alphaK, aes(x = iter, y = weight, linetype = k, colour = sigma)) + geom_line()
+    ggsave(output_file("alphaK-intermediaries.pdf"), gp)
 
     #
     # Plot the eigenvalues
@@ -673,8 +679,8 @@ summarise_SIMLR <- function(
       )
     #
     # Make the plot
-    ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
-    ggsave(output_file("L-eigenvalues-intermediaries.pdf"))
+    gp <- ggplot(eigvals, aes(x = iter, y = eigenvalue, group = eigenvector)) + geom_line()
+    ggsave(output_file("L-eigenvalues-intermediaries.pdf"), gp)
   }
 
   #
