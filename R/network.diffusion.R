@@ -159,7 +159,7 @@ col_sums <- function(W, method = "apply")
 #'
 row_sums <- function(W, method = "apply")
   switch(method,
-    "apply" = apply(W, MARGIN = 2, FUN = sum),
+    "apply" = apply(W, MARGIN = 1, FUN = sum),
     "rowSums" = rowSums(W),
     stop("Unknown method")
   )
