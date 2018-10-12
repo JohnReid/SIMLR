@@ -476,8 +476,7 @@ SIMLR <- function(
     I <- as.vector(seq(1, ncol(ind) * nrow(ind) + 1, ncol(ind)))
     J <- as.vector(t(ind))
     V <- as.vector(t(S))
-    # ydata <- Rtsne(I, J, V)$Y
-    ydata <- NULL
+    ydata <- Rtsne(I, J, V)$Y
   } else {
     ydata <- tsne(S)
   }
@@ -502,6 +501,10 @@ SIMLR <- function(
   )
   if (return_intermediaries) {
     result$intermediaries <- intermediaries
+  }
+  if (large.scale) {
+    result$ind <- ind
+    result$val <- val
   }
   return(result)
 }
