@@ -14,44 +14,46 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   stopifnot(all(A >= 0))
 
   # set the values of the diagonal of A to 0
-  diag(A) = 0
+  diag(A) <- 0
 
   # compute the dominate set for A and K
-  P = dominate.set(abs(A), min(K, nrow(A) - 1)) * sign(A)
+  P <- dominate.set(abs(A), min(K, nrow(A) - 1)) * sign(A)
 
   # sum the absolute value of each row of P
-  DD = row_sums(abs(P), method = 'apply')
+  DD <- row_sums(abs(P), method = "apply")
 
   # set the diagonal of P to be DD + 1
-  diag(P) = DD + 1
+  diag(P) <- DD + 1
 
   # compute the transition field of P
-  P = transition.fields(P)
+  P <- transition.fields(P)
 
   # compute the eigenvalues and eigenvectors of P
-  eigen_P <- calc_eigs(P, method = 'eigen')
-  U = eigen_P$vectors
-  D = eigen_P$values
+  eigen_P <- calc_eigs(P, method = "eigen")
+  U <- eigen_P$vectors
+  D <- eigen_P$values
 
   # set to d the real part of the diagonal of D + some eps
-  d = Re(D + .Machine$double.eps)
+  d <- Re(D + .Machine$double.eps)
 
   # perform the diffusion
-  alpha = 0.8
-  beta = 2
-  d = ((1 - alpha) * d) / (1 - alpha * d^beta)
+  alpha <- 0.8
+  beta <- 2
+  d <- ((1 - alpha) * d) / (1 - alpha * d^beta)
 
   # finally compute W
-  W = U %*% diag(d) %*% t(U)
-  W = (W * (1 - diag(nrow(W)))) / apply(array(0,c(nrow(W),ncol(W))),MARGIN=2,FUN=function(x) {x=(1-diag(W))})
-  if( scale_by_DD ) {
+  W <- U %*% diag(d) %*% t(U)
+  W <- (W * (1 - diag(nrow(W)))) / apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {
+    x <- (1 - diag(W))
+  })
+  if (scale_by_DD) {
     # This line is missing in network.diffusion.numc()
-    W = diag(DD) %*% W
+    W <- diag(DD) %*% W
   }
   # Ensure W symmetric
-  W = (W + t(W)) / 2
+  W <- (W + t(W)) / 2
   # Ensure all W are non-negative
-  W[W < 0] = 0
+  W[W < 0] <- 0
 
   return(W)
 }
@@ -64,7 +66,7 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
 #'
 #' @keywords internal
 #'
-dominate.set <- function( aff.matrix, NR.OF.KNN ) {
+dominate.set <- function(aff.matrix, NR.OF.KNN) {
   PNN <- apply(aff.matrix, MARGIN = 1, FUN = purrr::partial(zero_vec, k = NR.OF.KNN))
   return(as((t(PNN) + PNN) / 2, "dsCMatrix"))
 }
@@ -76,31 +78,30 @@ dominate.set <- function( aff.matrix, NR.OF.KNN ) {
 #'
 #' @keywords internal
 #'
-transition.fields <- function(W)
-{
+transition.fields <- function(W) {
   # the indexes of rows that sum to 0
   # I don't believe any rows can sum to 1 as each row contains
   # all elements of S that are not smaller than the row's k'th
   # element
-  zero.index = which(apply(W, MARGIN = 1, FUN = sum) == 0)
+  zero.index <- which(apply(W, MARGIN = 1, FUN = sum) == 0)
   #
   # Double check our assumption is correct....
   stopifnot(length(zero.index) == 0)
   #
   # Normalise W
-  W <- dn(W, 'ave')
+  W <- dn(W, "ave")
   #
   # Divide each element by the square root of the sum of the absolute value of its column
-  w <- sqrt(col_sums(abs(W), 'apply') + .Machine$double.eps)
+  w <- sqrt(col_sums(abs(W), "apply") + .Machine$double.eps)
   W <- scale_cols(W, w)
   #
   # Cross product W = W %*% t(W)
   W <- tcrossprod(W)
   #
   # set the elements of zero.index to 0
-  if( length(zero.index) ) {
-    W[zero.index,] = 0
-    W[,zero.index] = 0
+  if (length(zero.index)) {
+    W[zero.index, ] <- 0
+    W[, zero.index] <- 0
   }
   #
   return(W)
@@ -121,16 +122,17 @@ transition.fields <- function(W)
 dn <- function(W, type) {
   #
   # Scaling factors
-  w <- col_sums(W, 'apply')
+  w <- col_sums(W, "apply")
   #
   # Normalisation depending on type.
   switch(type,
-         ave = scale_rows(W, w),
-         gph = {
-           w_sqrt <- Diagonal(x = 1 / sqrt(w))
-           w_sqrt %*% (W %*% w_sqrt)
-         },
-         stop("Invalid normalisation type!"))
+    ave = scale_rows(W, w),
+    gph = {
+      w_sqrt <- Diagonal(x = 1 / sqrt(w))
+      w_sqrt %*% (W %*% w_sqrt)
+    },
+    stop("Invalid normalisation type!")
+  )
 }
 
 
@@ -138,49 +140,55 @@ dn <- function(W, type) {
 #'
 #' @keywords internal
 #'
-col_sums <- function(W, method = 'apply')
+col_sums <- function(W, method = "apply")
   switch(method,
-         'apply' = apply(W, MARGIN = 2, FUN = sum),
-         'colSums' = colSums(W),
-         stop('Unknown method'))
+    "apply" = apply(W, MARGIN = 2, FUN = sum),
+    "colSums" = colSums(W),
+    stop("Unknown method")
+  )
 
 
 #' Sum the rows
 #'
 #' @keywords internal
 #'
-row_sums <- function(W, method = 'apply')
+row_sums <- function(W, method = "apply")
   switch(method,
-         'apply' = apply(W, MARGIN = 2, FUN = sum),
-         'rowSums' = rowSums(W),
-         stop('Unknown method'))
+    "apply" = apply(W, MARGIN = 2, FUN = sum),
+    "rowSums" = rowSums(W),
+    stop("Unknown method")
+  )
 
 
 #' Scale the columns by w
 #'
 #' @keywords internal
 #'
-scale_cols <- function(W, w, method = 'denom')
+scale_cols <- function(W, w, method = "denom")
   switch(method,
-         orig = W / t(apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {x = w})),
-         denom = {
-           denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
-           W / denom
-         },
-         dense = as.matrix(W) %*% Diagonal(x = 1 / w),
-         sparse = W %*% Diagonal(x = 1 / w),
-         stop('Unknown method'))
+    orig = W / t(apply(array(0, c(nrow(W), ncol(W))), MARGIN = 2, FUN = function(x) {
+      x <- w
+    })),
+    denom = {
+      denom <- t(matrix(rep(w, ncol(W)), ncol = nrow(W)))
+      W / denom
+    },
+    dense = as.matrix(W) %*% Diagonal(x = 1 / w),
+    sparse = W %*% Diagonal(x = 1 / w),
+    stop("Unknown method")
+  )
 
 
 #' Scale the rows by w.
 #'
 #' @keywords internal
 #'
-scale_rows <- function(W, w, method = 'sparse')
+scale_rows <- function(W, w, method = "sparse")
   switch(method,
-         dense = diag(1 / w) %*% W,
-         sparse = Diagonal(x = 1 / w) %*% W,
-         stop('Unknown method'))
+    dense = diag(1 / w) %*% W,
+    sparse = Diagonal(x = 1 / w) %*% W,
+    stop("Unknown method")
+  )
 
 
 #' Calculate eigenvalues of a symmetric matrix P.
@@ -189,8 +197,9 @@ scale_rows <- function(W, w, method = 'sparse')
 #'
 #' @keywords internal
 #'
-calc_eigs <- function(P, method = 'eigen')
+calc_eigs <- function(P, method = "eigen")
   switch(method,
-         eigen = eigen(P, symmetric = TRUE),
-         Rspectra = eigs_sym(as(P, 'dgCMatrix'), ncol(P) - 1),  # Will use eigen if asked for all eigendimensions
-         stop('Unknown method'))
+    eigen = eigen(P, symmetric = TRUE),
+    Rspectra = eigs_sym(as(P, "dgCMatrix"), ncol(P) - 1), # Will use eigen if asked for all eigendimensions
+    stop("Unknown method")
+  )
