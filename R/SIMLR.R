@@ -562,31 +562,29 @@ summarise_SIMLR <- function(
     print(res$converge)
   }
   message("Weights:")
-  print(res$alphaK)
+  print(summary(res$alphaK))
 
   #
   # Scatter plot of dimensionality reduction
   if (! is.null(res[['ydata']])) {
-    pdf(output_file("scatter.pdf"), width = 9, height = 6, paper = "special")
-    plot(res$ydata,
-      col = get_palette(3)[.data$true_labs[, 1]],
-      xlab = "SIMLR component 1",
-      ylab = "SIMLR component 2",
-      pch = 20,
-      main = "SIMLR 2D visualization"
-    )
-    dev.off()
+    .df <- as.data.frame(res$ydata)
+    .df$label <- factor(.data$true_labs[, 1])
+    ggplot(.df, aes(x = V1, y = V2, colour = label)) +
+      xlab("SIMLR component 1") +
+      ylab("SIMLR component 2") +
+      ggtitle("SIMLR 2D visualization") +
+      geom_point()
+    ggsave(output_file("scatter.pdf"))
   }
 
   #
   # Make a heatmap of S
   if (! is.null(res[['S']]) && isSquare(res[['S']])) {
-    pdf(output_file("heatmap.pdf"), width = 8, height = 8, paper = "special")
-    similarity.heatmap(res$S,
-      label = stringr::str_c("label ", .data$true_labs[, 1]),
-      cluster = stringr::str_c("cluster ", res$y$cluster)
-    )
-    dev.off()
+    ggsave(
+      output_file("heatmap.pdf"),
+      similarity.heatmap(res$S,
+        label = stringr::str_c("label ", .data$true_labs[, 1]),
+        cluster = stringr::str_c("cluster ", res$y$cluster))[[4]])
   }
 
   #
