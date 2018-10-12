@@ -29,7 +29,6 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   P = transition.fields(P)
 
   # compute the eigenvalues and eigenvectors of P
-  stopifnot(isSymmetric(P))
   eigen_P <- calc_eigs(P, method = 'eigen')
   U = eigen_P$vectors
   D = eigen_P$values
