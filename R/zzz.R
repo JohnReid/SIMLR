@@ -1,3 +1,3 @@
-.onUnload <- function( libpath ) {
-    library.dynam.unload("SIMLR", libpath )
+.onUnload <- function(libpath) {
+  library.dynam.unload("SIMLR", libpath)
 }

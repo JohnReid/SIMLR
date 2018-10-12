@@ -11,7 +11,8 @@ method_tests <- function(methods., fn) {
     combn(methods., 2),
     MARGIN = 2,
     FUN = function(m)
-      expect_equal(results[[m[1]]], results[[m[2]]], check.attributes = FALSE))
+      expect_equal(results[[m[1]]], results[[m[2]]], check.attributes = FALSE)
+  )
 }
 
 
@@ -21,28 +22,28 @@ test_that("alternative methods", {
   set.seed(3737)
   W_dense <- matrix(runif(100), nrow = 10)
   W_sparse <- Matrix(0, nrow = 10, ncol = 10)
-  for( c. in 1:10 ) {
+  for (c. in 1:10) {
     W_sparse[sample(10, 3), c.] <- rnorm(3)
   }
   w <- exp(rnorm(10))
   #
   # scale_rows
-  scale_row_methods <- c('dense', 'sparse')
+  scale_row_methods <- c("dense", "sparse")
   method_tests(scale_row_methods, compose(as.matrix, partial(scale_rows, W_dense, w)))
   method_tests(scale_row_methods, compose(as.matrix, partial(scale_rows, W_sparse, w)))
   #
   # scale_cols
-  scale_col_methods <- c('orig', 'denom', 'dense', 'sparse')
+  scale_col_methods <- c("orig", "denom", "dense", "sparse")
   method_tests(scale_col_methods, compose(as.matrix, partial(scale_cols, W_dense, w)))
   method_tests(scale_col_methods, compose(as.matrix, partial(scale_cols, W_sparse, w)))
   #
   # col_sums
-  col_sum_methods <- c('apply', 'colSums')
+  col_sum_methods <- c("apply", "colSums")
   method_tests(col_sum_methods, compose(as.matrix, partial(col_sums, W_dense)))
   method_tests(col_sum_methods, compose(as.matrix, partial(col_sums, W_sparse)))
   #
   # row_sums
-  row_sum_methods <- c('apply', 'rowSums')
+  row_sum_methods <- c("apply", "rowSums")
   method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_dense)))
   method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_sparse)))
 })
