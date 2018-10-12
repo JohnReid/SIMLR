@@ -7,10 +7,10 @@
 #'
 #' @keywords internal
 #'
-multiple.kernel = function(x, cl, calc.dists = TRUE, offset = 1, dist_power = 2) {
-  D_Kernels = multiple.unnorm.kernels(x, cl = cl, dist_power = dist_power)
+multiple.kernel <- function(x, cl, calc.dists = TRUE, offset = 1, dist_power = 2) {
+  D_Kernels <- multiple.unnorm.kernels(x, cl = cl, dist_power = dist_power)
   if (calc.dists) {
-    D_Kernels = norm.and.calc.dists(D_Kernels, offset = offset)
+    D_Kernels <- norm.and.calc.dists(D_Kernels, offset = offset)
   }
   #
   # Return the distances/kernels
@@ -24,14 +24,14 @@ multiple.kernel = function(x, cl, calc.dists = TRUE, offset = 1, dist_power = 2)
 #'
 #' @keywords internal
 #'
-norm.and.calc.dists = function(D_Kernels, offset = 1) {
+norm.and.calc.dists <- function(D_Kernels, offset = 1) {
   #
   # Normalise the kernels, calculate the kernel distances and convert to sparse matrices
   message("Calculating distances.")
   # for (i in 1:length(D_Kernels)) {
   #     D_Kernels[[i]] = Matrix(kernel.distance.2(kernel.normalise(D_Kernels[[i]])), sparse=TRUE, doDiag=FALSE)
   # }
-  D_Kernels = lapply(
+  D_Kernels <- lapply(
     D_Kernels,
     function(G) Matrix(kernel.distance.2(kernel.normalise(G, offset = offset)), sparse = TRUE, doDiag = FALSE)
   )
@@ -49,20 +49,20 @@ norm.and.calc.dists = function(D_Kernels, offset = 1) {
 #'
 #' @keywords internal
 #'
-multiple.unnorm.kernels = function(x, cl, dist_power = 2) {
+multiple.unnorm.kernels <- function(x, cl, dist_power = 2) {
   message("Calculating kernels.")
   #
   # Kernel parameters
-  sigma = default_sigma()
-  allk = default_k()
+  sigma <- default_sigma()
+  allk <- default_k()
 
   #
   # compute and sort Diff
-  Diff = dist2(x)^dist_power # Diff is the square of the squared distance (i.e. power of 4)
-  Diff_sort = t(apply(Diff, MARGIN = 2, FUN = sort)) # Sort the rows to help with kNN later
+  Diff <- dist2(x)^dist_power # Diff is the square of the squared distance (i.e. power of 4)
+  Diff_sort <- t(apply(Diff, MARGIN = 2, FUN = sort)) # Sort the rows to help with kNN later
 
   # The parallel apply runs over all the k for the kNN
-  D_Kernels = unlist(parLapply(
+  D_Kernels <- unlist(parLapply(
     cl,
     allk,
     fun = function(k, .Diff_sort = Diff_sort, .Diff = Diff, .sigma = sigma) {
@@ -71,19 +71,19 @@ multiple.unnorm.kernels = function(x, cl, dist_power = 2) {
         #
         # Calculate the mean of the k-nearest-neighbours,
         # this is mu_i in the paper Eqn. (4)
-        TT = apply(.Diff_sort[, 2:(k + 1)], MARGIN = 1, FUN = mean) + .Machine$double.eps
+        TT <- apply(.Diff_sort[, 2:(k + 1)], MARGIN = 1, FUN = mean) + .Machine$double.eps
         #
         # Do an outer average
         # this is (mu_i + mu_j) / 2 in the paper Eqn. (4)
-        Sig = outer(TT, TT, FUN = function(x, y) (x + y) / 2)
+        Sig <- outer(TT, TT, FUN = function(x, y) (x + y) / 2)
         #
         # Ensure every entry is at least machine epsilon
-        Sig[Sig < .Machine$double.eps] = .Machine$double.eps
+        Sig[Sig < .Machine$double.eps] <- .Machine$double.eps
         #
         # Construct a kernel for each scaling sigma
         sigma_kernels <- lapply(.sigma, FUN = function(sigma) {
           # N.B. .Diff == the squared squared distance (i.e. power of 4)
-          W = dnorm(.Diff, 0, sigma * Sig)
+          W <- dnorm(.Diff, 0, sigma * Sig)
           return(Matrix((W + t(W)) / 2, sparse = TRUE, doDiag = FALSE))
         })
         return(sigma_kernels)
@@ -100,8 +100,8 @@ multiple.unnorm.kernels = function(x, cl, dist_power = 2) {
 #'
 #' @keywords internal
 #'
-kernel.normalise = function(K, offset = 1) {
-  k = 1 / sqrt(diag(K) + offset)
+kernel.normalise <- function(K, offset = 1) {
+  k <- 1 / sqrt(diag(K) + offset)
   return(K * (k %*% t(k)))
 }
 
@@ -115,125 +115,125 @@ kernel.normalise = function(K, offset = 1) {
 #'
 #' @keywords internal
 #'
-kernel.distance.2 = function(G) {
+kernel.distance.2 <- function(G) {
   # Construct a matrix where each row is the diagonal of the Gram matrix
-  G1 = matrix(rep(diag(G), nrow(G)), nrow = nrow(G))
+  G1 <- matrix(rep(diag(G), nrow(G)), nrow = nrow(G))
   # Calculate half the squared distance
   # JR: I'm not sure why the half is there.
-  D_Kernels_tmp = (G1 + t(G1) - 2 * G) / 2
+  D_Kernels_tmp <- (G1 + t(G1) - 2 * G) / 2
   # Ensure diagonal is 0, it should be anyway
   return(D_Kernels_tmp - diag(diag(D_Kernels_tmp)))
 }
 
 
 # compute the multiple kernel
-compute.multiple.kernel = function(kernel.type, x1, x2 = NA, kernel.params = NA) {
+compute.multiple.kernel <- function(kernel.type, x1, x2 = NA, kernel.params = NA) {
 
   # set the parameters for x1
-  n1 = nrow(x1)
-  d1 = ncol(x1)
+  n1 <- nrow(x1)
+  d1 <- ncol(x1)
 
   # set the parameters for x2
   if (any(is.na(x2))) {
-    n2 = n1
-    d2 = d1
-    flag = 0
+    n2 <- n1
+    d2 <- d1
+    flag <- 0
   }
   else {
-    n2 = nrow(x2)
-    d2 = ncol(x2)
+    n2 <- nrow(x2)
+    d2 <- ncol(x2)
     if (d1 != d2) {
       stop("Error in the data.")
     }
-    flag = 1
+    flag <- 1
   }
 
   # set the count.kernel.type
-  count.kernel.type = length(kernel.params)
+  count.kernel.type <- length(kernel.params)
   if (length(kernel.type) < 1 || length(kernel.type) != count.kernel.type) {
     stop("Error in the parameters.")
   }
 
   # count the parameters
-  k.count = 0
+  k.count <- 0
   for (i in 1:count.kernel.type) {
-    k.count = k.count + length(kernel.params[[i]])
+    k.count <- k.count + length(kernel.params[[i]])
   }
 
   # set the structure to save the kernels
-  kernels = list()
+  kernels <- list()
 
   # compute the kernels
-  iteration.kernels = 1
+  iteration.kernels <- 1
   for (i in 1:count.kernel.type) {
     for (j in 1:length(kernel.params[[i]])) {
-      single.kernel.type = kernel.type[[i]]
-      single.kernel.parameters = kernel.params[[i]][j]
+      single.kernel.type <- kernel.type[[i]]
+      single.kernel.parameters <- kernel.params[[i]][j]
       if (flag == 3) {
-        kernels[[iteration.kernels]] = compute.kernel(single.kernel.type, x1, NA, single.kernel.parameters)
+        kernels[[iteration.kernels]] <- compute.kernel(single.kernel.type, x1, NA, single.kernel.parameters)
       }
       else {
-        kernels[[iteration.kernels]] = compute.kernel(single.kernel.type, x1, x2, single.kernel.parameters)
+        kernels[[iteration.kernels]] <- compute.kernel(single.kernel.type, x1, x2, single.kernel.parameters)
       }
     }
-    iteration.kernels = iteration.kernels + 1
+    iteration.kernels <- iteration.kernels + 1
   }
 
   return(kernels)
 }
 
 # compute the single kernel
-"compute.kernel" = function(kernel.type, x1, x2 = NA, kernel.params = NA) {
+"compute.kernel" <- function(kernel.type, x1, x2 = NA, kernel.params = NA) {
 
   # set the parameters for x1
-  n1 = nrow(x1)
-  d1 = ncol(x1)
+  n1 <- nrow(x1)
+  d1 <- ncol(x1)
 
   # set the parameters for x2
   if (any(is.na(x2))) {
-    n2 = n1
-    d2 = d1
-    flag = 0
+    n2 <- n1
+    d2 <- d1
+    flag <- 0
   }
   else {
-    n2 = nrow(x2)
-    d2 = ncol(x2)
+    n2 <- nrow(x2)
+    d2 <- ncol(x2)
     if (d1 != d2) {
       stop("Error in the data.")
     }
-    flag = 1
+    flag <- 1
   }
 
   # consider any kernel type
   if (kernel.type == "linear") {
-    K = x1 %*% t(x2)
+    K <- x1 %*% t(x2)
   }
   else if (kernel.type == "poly") {
-    K = (x1 %*% t(x2))^kernel.params
+    K <- (x1 %*% t(x2))^kernel.params
   }
   else if (kernel.type == "rbf") {
     if (flag == 0) {
-      P = apply((x1 * x1), MARGIN = 1, FUN = sum)
-      P1 = t(P)
-      P1 = apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
-        x = P1
+      P <- apply((x1 * x1), MARGIN = 1, FUN = sum)
+      P1 <- t(P)
+      P1 <- apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
+        x <- P1
       })
-      P2 = P
-      P2 = apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
-        x = P2
+      P2 <- P
+      P2 <- apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
+        x <- P2
       })
     }
     else {
-      P1 = apply((x1 * x1), MARGIN = 1, FUN = sum)
-      P1 = apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
-        x = P1
+      P1 <- apply((x1 * x1), MARGIN = 1, FUN = sum)
+      P1 <- apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
+        x <- P1
       })
-      P2 = t(apply((x2 * x2), MARGIN = 1, FUN = sum))
-      P2 = apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
-        x = P2
+      P2 <- t(apply((x2 * x2), MARGIN = 1, FUN = sum))
+      P2 <- apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
+        x <- P2
       })
     }
-    K = exp(-(P1 + P2 - 2 * x1 %*% t(x2)) %/% (2 * kernel.params^2))
+    K <- exp(-(P1 + P2 - 2 * x1 %*% t(x2)) %/% (2 * kernel.params^2))
   }
 
   return(K)
@@ -245,24 +245,24 @@ compute.multiple.kernel = function(kernel.type, x1, x2 = NA, kernel.params = NA)
 #' NOTE: This function looks like it calculates the squared distance
 #' @keywords internal
 #'
-"dist2" = function(x, c = NA) {
+"dist2" <- function(x, c = NA) {
 
   # set the parameters for x
   if (is.na(c)) {
-    c = x
+    c <- x
   }
 
   # compute the dimension
-  n1 = nrow(x)
-  d1 = ncol(x)
-  n2 = nrow(c)
-  d2 = ncol(c)
+  n1 <- nrow(x)
+  d1 <- ncol(x)
+  n2 <- nrow(c)
+  d2 <- ncol(c)
   if (d1 != d2) {
     stop("Data dimension does not match dimension of centres.")
   }
 
   # compute the distance
-  dist = t(rep(1, n2) %*% t(apply(t(x^2), MARGIN = 2, FUN = sum))) +
+  dist <- t(rep(1, n2) %*% t(apply(t(x^2), MARGIN = 2, FUN = sum))) +
     (rep(1, n1) %*% t(apply(t(c^2), MARGIN = 2, FUN = sum))) -
     2 * (x %*% t(c))
 

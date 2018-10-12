@@ -40,7 +40,7 @@ similarity.heatmap <- function(
   #
   # If we have labels configure the plot settings
   if (!is.null(label)) {
-    meta$label = factor(label)
+    meta$label <- factor(label)
     if (is.null(label_colors)) {
       label_colors <- RColorBrewer::brewer.pal(n = nlevels(meta$label), name = label_palette)
     }
@@ -56,7 +56,7 @@ similarity.heatmap <- function(
   #
   # If we have clusters configure the plot settings
   if (!is.null(cluster)) {
-    meta$cluster = factor(cluster)
+    meta$cluster <- factor(cluster)
     if (is.null(cluster_colors)) {
       cluster_colors <- RColorBrewer::brewer.pal(n = nlevels(meta$cluster), name = cluster_palette)
     }
