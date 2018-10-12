@@ -46,4 +46,14 @@ test_that("alternative methods", {
   row_sum_methods <- c("apply", "rowSums")
   method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_dense)))
   method_tests(row_sum_methods, compose(as.matrix, partial(row_sums, W_sparse)))
+  #
+  # multiply_rows
+  multiply_rows_methods <- c("diag", "sweep")
+  method_tests(multiply_rows_methods, compose(as.matrix, partial(multiply_rows, w, W_dense)))
+  method_tests(multiply_rows_methods, compose(as.matrix, partial(multiply_rows, w, W_sparse)))
+  #
+  # multiply_cols
+  multiply_cols_methods <- c("diag", "sweep")
+  method_tests(multiply_cols_methods, compose(as.matrix, partial(multiply_cols, w, W_dense)))
+  method_tests(multiply_cols_methods, compose(as.matrix, partial(multiply_cols, w, W_sparse)))
 })
