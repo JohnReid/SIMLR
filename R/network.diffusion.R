@@ -1,4 +1,4 @@
-#' Perform network diffusion of K steps over the network A
+#' Perform network diffusion using K neareast neighbours over the network A
 #'
 #' This is called similarity enhancement by diffusion in the paper
 #'
