@@ -109,7 +109,11 @@ SIMLR <- function(
 
   #
   # Start a cluster for parallel tasks
-  cl <- start_cluster(cores.ratio)
+  cores = as.integer(cores.ratio * (detectCores() - 1))
+  if (cores < 1 || is.na(cores) || is.null(cores)) {
+    cores = 1
+  }
+  cl <- start_cluster(cores)
 
   #
   # compute the kernel distances
