@@ -1,10 +1,6 @@
 source("packageimport.r")
 dyn.load("../src/projsplx_R.so")
-library(gplots)
-library(reshape2)
-library(gridExtra)
-library(grid)
-library(ggpubr)
+
 load(file="../data/Buettner.RData")
 load(file="../data/Kolodziejczyk.RData")
 load(file="../data/Pollen.RData")
@@ -17,9 +13,9 @@ RESULT.full <- list()
 RESULT.trun <- list()
 
 # To compute the result of modified SIMLR INDIVIDUALLY by involving various of kernels
-result <- SIMLR.FZINB(X = Test[[1]]$in_X, c = Test[[1]]$n_clust, cores.ratio = 0.8,
-                      IncludeGaussian = TRUE, IncludeFZINBvariants = "Gaussian_kernel.FZINB_distance")
-
+result <- SIMLR(X = Test[[1]]$in_X, c = Test[[1]]$n_clust, cores.ratio = 0.8,
+                      IncludeGaussian = TRUE, IncludeFZINBvariants = "BOTH")
+# Note that IncludeFZINBvariants = c("FZINB_kernel","Gaussian_kernel.FZINB_distance","BOTH","NONE")
 
 
 # To compute the result of SIMLR BULKLY for all datasets and all methods
@@ -38,6 +34,15 @@ for (n in 1:n_dataset){
 # The analysis of the results based on the BULK computation by SIMLR.COMBINE
 RESULT <- RESULT.trun
 RESULT <- RESULT.full
+# The result run by SIMLR.COMBINE is stored in the folder FZINB/results/RESULT_main.RDATA
+
+
+###  RESULT ANALYSIS  ####
+library(gplots)
+library(reshape2)
+library(gridExtra)
+library(grid)
+library(ggpubr)
 
   #### Heatmap for similarity matrix ###
 p_S <- list()

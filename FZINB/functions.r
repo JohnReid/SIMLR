@@ -238,13 +238,13 @@ library("lbfgs")
     }
   }
   n_cell <- ncol(X_counts)
-  cat(paste("-- Computing MLE for fitting ZINB.\n" ))
+  message(paste("-- Computing MLE for fitting ZINB.\n" ))
   THETA <- MLE.zinb(X_counts,Theta0)
   extract <- which(THETA[,3]>truncate.ratio & THETA[,3]<0.9)
   
   extract_sorted <- head(sort(apply(X_counts[extract,], 1, var), decreasing = TRUE,index.return = TRUE)$ix , n_gene)
   sorted <- extract[extract_sorted]
-  cat("-- Computing FZINB for Gene.\n")
+  message("-- Computing FZINB for Gene.\n")
   # setup a parallelized estimation of the kernels
   FZINB <-list()
   wd_ = getwd()
