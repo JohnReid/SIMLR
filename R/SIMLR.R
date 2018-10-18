@@ -58,7 +58,7 @@ SIMLR <- function(
   cores.ratio = 1,
   large.scale = FALSE,
   return_intermediaries = FALSE,
-  Kernel.choice = list(multiple.kernel,FZINB.matrix, Gaussian.FZINB.kernel)) 
+  Kernel.choice = multiple.kernel) 
 {
   # convert SCESet
   if (is(X, "SCESet")) {
