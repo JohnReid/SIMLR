@@ -13,9 +13,8 @@ RESULT.full <- list()
 RESULT.trun <- list()
 
 # To compute the result of modified SIMLR INDIVIDUALLY by involving various of kernels
-result <- SIMLR(X = Test[[1]]$in_X, c = Test[[1]]$n_clust, cores.ratio = 0.8,
-                      IncludeGaussian = TRUE, IncludeFZINBvariants = "BOTH")
-# Note that IncludeFZINBvariants = c("FZINB_kernel","Gaussian_kernel.FZINB_distance","BOTH","NONE")
+result <- SIMLR(X = Test[[1]]$in_X, c = Test[[1]]$n_clust, cores.ratio = 0.8, Kernel.choice = FZINB.matrix)
+# Note that Kernel.choice = c(multiple.kernel,FZINB.matrix,Gaussian.FZINB.kernel)
 
 
 # To compute the result of SIMLR BULKLY for all datasets and all methods

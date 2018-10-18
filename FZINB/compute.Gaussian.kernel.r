@@ -1,6 +1,5 @@
 
-"Gaussian.FZINB.kernel" = function( x, cores.ratio = 1 , FZINB = NULL) {
-  
+"Gaussian.FZINB.kernel" = function( X, cores.ratio = 1 , FZINB = NULL) {
   # set the parameters
   kernel.type = list()
   kernel.type[1] = list("poly")
@@ -8,13 +7,13 @@
   kernel.params[1] = list(0)
   
   # compute some parameters from the kernels
-  N = dim(x)[1]
+  N = dim(X)[2]
   KK = 0
   sigma = seq(2,1,-0.25)
   # compute and sort Diff
   if (is.null(FZINB)){
-    X_counts <- round(10^t(x)-1.0)
-    FZINB <- FZINB.matrix(X_counts,Theta0 = NULL, cores.ratio = cores.ratio)
+    X_counts <- round(10^X-1.0)
+    FZINB <- FZINB.matrix(X_counts,Theta0 = NULL, cores.ratio = cores.ratio, LogCOUNTS = FALSE, distance = FALSE)
   }
   Diff = (FZINB.Distance.matrix(FZINB))^2
   Diff_sort = t(apply(Diff,MARGIN=2,FUN=sort))
@@ -35,7 +34,7 @@
   #clusterExport(cl=cl, varlist=c("x", "Diff_sort", "allk", "Diff","sigma","KK","F_Kernels"), envir=environment())
   
   F_Kernels = list()
-  F_Kernels = unlist(parLapply(cl,1:length(allk),fun=function(l,x_fun=x,Diff_sort_fun=Diff_sort,allk_fun=allk,
+  F_Kernels = unlist(parLapply(cl,1:length(allk),fun=function(l,x_fun=t(X),Diff_sort_fun=Diff_sort,allk_fun=allk,
                                                               Diff_fun=Diff,sigma_fun=sigma,KK_fun=KK) {
     if(allk_fun[l]<(nrow(x_fun)-1)) {
       TT = apply(Diff_sort_fun[,2:(allk_fun[l]+1)],MARGIN=1,FUN=mean) + .Machine$double.eps
@@ -112,7 +111,7 @@
   
   Kernels = list()
   Kernels = unlist(parLapply(cl,1:length(allk),fun=function(l,x_fun=x,Diff_sort_fun=Diff_sort,allk_fun=allk,
-                                                              Diff_fun=Diff,sigma_fun=sigma,KK_fun=KK) {
+                                                            Diff_fun=Diff,sigma_fun=sigma,KK_fun=KK) {
     if(allk_fun[l]<(nrow(x_fun)-1)) {
       TT = apply(Diff_sort_fun[,2:(allk_fun[l]+1)],MARGIN=1,FUN=mean) + .Machine$double.eps
       TT = matrix(data = TT, nrow = length(TT), ncol = 1)

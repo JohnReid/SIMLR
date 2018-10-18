@@ -58,10 +58,8 @@ SIMLR <- function(
   cores.ratio = 1,
   large.scale = FALSE,
   return_intermediaries = FALSE,
-  IncludeGaussian = TRUE, 
-  IncludeFZINBvariants = c("FZINB_kernel","Gaussian_kernel.FZINB_distance","BOTH","NONE")) 
+  Kernel.choice = list(multiple.kernel,FZINB.matrix, Gaussian.FZINB.kernel)) 
 {
-  IncludeFZINBvariants  <- match.arg(IncludeFZINBvariants)
   # convert SCESet
   if (is(X, "SCESet")) {
     message("X is an SCESet, converting to input matrix.")
@@ -114,50 +112,19 @@ SIMLR <- function(
   
   
   
-  Kernels <-list()
-  message("Computing the FZINB Kernels.\n")
-  X_counts <- round(10^X-1.0)
-  FZINB <- FZINB.matrix(X_counts, Theta0 = NULL, n_gene = 1000, cores.ratio = cores.ratio)
-  
+  cores = as.integer(cores.ratio * (detectCores() - 1))
+  if (cores < 1 || is.na(cores) || is.null(cores)) {
+    cores = 1
+  }
+  cl = start_cluster( cores )
   # compute the Kernels
-  if (IncludeGaussian){
-    message("Computing the Gaussian Kernels based on Euclidean distance space.\n")
-    #D_Kernels = multiple.kernel.standard(t(X),cores.ratio)
-    cores = as.integer(cores.ratio * (detectCores() - 1))
-    if (cores < 1 || is.na(cores) || is.null(cores)) {
-      cores = 1
-    }
-    cl = start_cluster( cores )
-    if (large.scale) {
-      D_Kernels <- multiple.kernel_large_scale(val, ind, k)
-    } else {
-      D_Kernels <- multiple.kernel(t(X), cl = cl)
-    }
-    Kernels <- append(Kernels,D_Kernels)
+  cat(paste("Computing chosen kernels \n"))
+
+  D_Kernels <- Kernel.choice(X, cores.ratio=cores.ratio)
+  if (is.list(D_Kernels) == FALSE){
+    D_Kernels <- list(D_Kernels,D_Kernels)
   }
-  
-  if (IncludeFZINBvariants == "FZINB_kernel"){
-    message("Computing the FZINB kernel distance.\n")
-    D_FZINB <- FZINB.Distance.matrix(FZINB)
-    Kernels <- append(Kernels, Matrix(D_FZINB))
-    if (IncludeGaussian==FALSE){
-      Kernels <- append(Kernels, Matrix(D_FZINB))
-    }
-  }
-  else if(IncludeFZINBvariants == "Gaussian_kernel.FZINB_distance"){
-    message("Computing the Gaussian Kernels based on FZINB distance space.\n")
-    FD_Kernels <- Gaussian.FZINB.kernel(t(X), cores.ratio = cores.ratio, FZINB = FZINB)
-    Kernels <- append(Kernels,FD_Kernels)
-  }
-  else if(IncludeFZINBvariants == "BOTH"){
-    message("Computing the Gaussian Kernels based on FZINB distance space.\n")
-    FD_Kernels <- Gaussian.FZINB.kernel(t(X), cores.ratio = cores.ratio, FZINB = FZINB)
-    message("Computing the FZINB kernel distance.\n")
-    D_FZINB <- FZINB.Distance.matrix(FZINB)
-    
-    Kernels <- append(Kernels,FD_Kernels)
-    Kernels <- append(Kernels, Matrix(D_FZINB))
-  }
+  cat(paste("There are",length(D_Kernels),"kernel candidates\n"))
   
   # compute the kernel distances
   if (large.scale) {

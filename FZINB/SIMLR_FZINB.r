@@ -54,7 +54,7 @@
   ptm = proc.time()
   cat("Computing the FZINB Kernels.\n")
   X_counts <- round(10^X-1.0)
-  FZINB <- FZINB.matrix(X_counts, Theta0 = NULL, n_gene = 1000, cores.ratio = cores.ratio)
+  FZINB <- FZINB.matrix(X_counts, Theta0 = NULL, n_gene = 1000, cores.ratio = cores.ratio, LogCOUNTS = FALSE, distance = FALSE)
   execution.time["FZINB_kernel"] = (proc.time() - ptm)[1]
   
   ptm = proc.time()

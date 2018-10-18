@@ -229,7 +229,10 @@ library("lbfgs")
 
 ###FZINB matrix ####
 # more other version of FZINB.matrix function, such as non-parallelling version, can be seen in file tryParallel.R
-"FZINB.matrix" <- function(X_counts, Theta0 = NULL, truncate.ratio = 0.3, n_gene = 1000 , cores.ratio = 1){
+"FZINB.matrix" <- function(X_counts, LogCOUNTS = TRUE, Theta0 = NULL, truncate.ratio = 0.3, n_gene = 1000 , cores.ratio = 1, distance = TRUE){
+  if (LogCOUNTS){
+    X_counts <- round(10^X_counts-1.0)
+  }
   if (is.null(Theta0)){
     Theta0 <- prior.zinb(X_counts)$Theta0
     if(Theta0[2]<0){
@@ -237,14 +240,15 @@ library("lbfgs")
       Theta0[2] <- 1
     }
   }
+  cat(paste("Computing FZINB kernel.\n" ))
   n_cell <- ncol(X_counts)
-  message(paste("-- Computing MLE for fitting ZINB.\n" ))
+  cat(paste("-- Computing MLE for fitting ZINB.\n" ))
   THETA <- MLE.zinb(X_counts,Theta0)
   extract <- which(THETA[,3]>truncate.ratio & THETA[,3]<0.9)
   
   extract_sorted <- head(sort(apply(X_counts[extract,], 1, var), decreasing = TRUE,index.return = TRUE)$ix , n_gene)
   sorted <- extract[extract_sorted]
-  message("-- Computing FZINB for Gene.\n")
+  cat("-- Computing FZINB for Gene.\n")
   # setup a parallelized estimation of the kernels
   FZINB <-list()
   wd_ = getwd()
@@ -266,8 +270,17 @@ library("lbfgs")
     return(tempK) 
   })
   stopCluster(cl)
-  FZINB <- Reduce("+", FZINB)/n_gene
-  return(matrix(FZINB,ncol = n_cell))
+  FZINB <- matrix(Reduce("+", FZINB)/n_gene, ncol = n_cell)
+  if (distance){
+    k <- 1/sqrt(diag(FZINB))
+    FD_matrix <- sqrt(abs(2 - 2*FZINB * (k %*% t(k))))
+    diag(FD_matrix)<-0
+    return(FD_matrix)
+  }
+  else{
+    return(FZINB)
+  }
+  
 }
 
 

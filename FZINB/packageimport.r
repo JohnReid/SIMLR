@@ -24,5 +24,5 @@ source("../R/calc.DD.R")
 source("./functions.r")
 
 source("./SIMLR_FZINB.r")
-source("./compute.FZINB.kernel.r")
+source("./compute.Gaussian.kernel.r")
 
