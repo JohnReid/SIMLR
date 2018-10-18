@@ -386,8 +386,13 @@ SIMLR <- function(
       # Test for convergence
       #
       # This uses the eigengap criterion (between the c'th and (c+1)'th eigenvalues).
+      # For some reason this code does not work as well:
+      #   converge[iter] <- eig_val_full[c+1] - eig_val_full[c]
+      # Presumably because of some rounding error
       #
-      converge[iter] <- eig_val_full[c+1] - eig_val_full[c]
+      converge[iter] <- sum(eig_val_full[1:(c + 1)]) - sum(eig_val_full[1:c])
+      #
+      # Use heuristic after so many iterations...
       if (iter < 10) {
         # Heuristic to increase lambda and reduce r if there is an eigengap in the first 9 iterations
         if (eig_val[length(eig_val)] > 0.000001) {
