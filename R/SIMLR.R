@@ -20,6 +20,8 @@
 #' @param cores.ratio ratio of the number of cores to be used when computing the multi-kernel
 #' @param large.scale use version of the algorithm designed for large data
 #' @param return_intermediaries Return intermediate values of S
+#' @param kernel_calculator An optional function to calculate the kernels. It should take
+#'   an argument like \code{X} and an optional parallel cluster and return a list of kernels.
 #'
 #' @return clusters the cells based on SIMLR and their similarities
 #'
@@ -58,7 +60,7 @@ SIMLR <- function(
   cores.ratio = 1,
   large.scale = FALSE,
   return_intermediaries = FALSE,
-  Kernel.choice = multiple.kernel) 
+  kernel_calculator = NA)
 {
   # convert SCESet
   if (is(X, "SCESet")) {
@@ -108,24 +110,6 @@ SIMLR <- function(
   # Remember the time to calculate execution time later
   ptm <- proc.time()
 
-  
-  
-  
-  
-  cores = as.integer(cores.ratio * (detectCores() - 1))
-  if (cores < 1 || is.na(cores) || is.null(cores)) {
-    cores = 1
-  }
-  cl = start_cluster( cores )
-  # compute the Kernels
-  cat(paste("Computing chosen kernels \n"))
-
-  D_Kernels <- Kernel.choice(X, cores.ratio=cores.ratio)
-  if (is.list(D_Kernels) == FALSE){
-    D_Kernels <- list(D_Kernels,D_Kernels)
-  }
-  cat(paste("There are",length(D_Kernels),"kernel candidates\n"))
-  
   # compute the kernel distances
   if (large.scale) {
     message("Performing fast PCA.")
@@ -151,7 +135,21 @@ SIMLR <- function(
     timer$add("knn.search")
   }
 
+  #
+  # Start a cluster for parallel tasks
+  cl <- start_cluster(cores.ratio)
 
+  #
+  # compute the Kernels
+  message("Computing the multiple kernels.")
+  if (! is.na(kernel_calculator)) {
+    D_Kernels <- kernel_calculator(X, cl)
+  } else if (large.scale) {
+    D_Kernels <- multiple.kernel_large_scale(val, ind, k)
+  } else {
+    D_Kernels <- multiple.kernel(t(X), cl = cl)
+  }
+  message("There are ", length(D_Kernels), " candidate kernels")
 
   #
   # Create arrays to store intermediaries if requested to
