@@ -143,7 +143,7 @@ SIMLR <- function(
   # compute the Kernels
   message("Computing the multiple kernels.")
   if (! is.na(kernel_calculator)) {
-    D_Kernels <- kernel_calculator(X, cl)
+    D_Kernels <- kernel_calculator(t(X), cl = cl)
   } else if (large.scale) {
     D_Kernels <- multiple.kernel_large_scale(val, ind, k)
   } else {

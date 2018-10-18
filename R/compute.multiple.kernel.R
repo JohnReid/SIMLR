@@ -7,13 +7,8 @@
 #'
 #' @keywords internal
 #'
-multiple.kernel <- function(X, cores.ratio = 1, calc.dists = TRUE, offset = 1, dist_power = 2) {
-  cores = as.integer(cores.ratio * (detectCores() - 1))
-  if (cores < 1 || is.na(cores) || is.null(cores)) {
-    cores = 1
-  }
-  cl = start_cluster( cores )
-  D_Kernels <- multiple.unnorm.kernels(t(X), cl = cl, dist_power = dist_power)
+multiple.kernel <- function(X, cl, calc.dists = TRUE, offset = 1, dist_power = 2) {
+  D_Kernels <- multiple.unnorm.kernels(X, cl = cl, dist_power = dist_power)
   if (calc.dists) {
     D_Kernels <- norm.and.calc.dists(D_Kernels, offset = offset)
   }
