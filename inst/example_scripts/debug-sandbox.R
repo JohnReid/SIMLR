@@ -4,6 +4,10 @@
 
 library(microbenchmark)
 library(ggplot2)
+devtools::load_all('../..')
+
+
+devtools::test(filter = 'alt_calcs')
 
 #
 # Retrieve one of the S intermediaries
@@ -19,6 +23,16 @@ mean(S != 0)
 A <- S
 K <- 10
 scale_by_DD <- TRUE
+
+
+devtools::load_all('../..')
+L.orig <- laplacian(S, 'orig')
+L.apply <- laplacian(S, 'apply')
+L.orig[1:5, 1:5]
+L.apply[1:5, 1:5]
+all.equal(laplacian(S, 'orig'), laplacian(S, 'apply'))
+microbenchmark(laplacian(S, 'orig'), laplacian(S, 'apply'))
+
 
 #
 # Look at eigenvalue adjustment
@@ -36,7 +50,6 @@ microbenchmark(divide_rows_by_diag(W, method = 'sweep'),
 
 #
 # Check how to write diag(v) %*% X as a sweep
-devtools::load_all('../..')
 nr <- 511
 nc <- 513
 X <- matrix(rnorm(nr * nc), nrow = nr)
@@ -47,3 +60,5 @@ microbenchmark(multiply_rows(v, X, 'sweep'), multiply_rows(v, X, 'diag'))
 v <- rnorm(nc)
 all.equal(multiply_cols(v, X, 'sweep'), multiply_cols(v, X, 'diag'))
 microbenchmark(multiply_cols(v, X, 'sweep'), multiply_cols(v, X, 'diag'))
+
+
