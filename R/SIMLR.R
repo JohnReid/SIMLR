@@ -149,7 +149,8 @@ SIMLR <- function(
   } else {
     D_Kernels <- multiple.kernel(t(X), cl = cl)
   }
-  message("There are ", length(D_Kernels), " candidate kernels")
+  timer$add("calculate.kernels")
+  message("There are ", length(D_Kernels), " candidate kernels.")
 
   #
   # Create arrays to store intermediaries if requested to
