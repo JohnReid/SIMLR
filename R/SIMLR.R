@@ -19,6 +19,7 @@
 #' @param normalize should I normalize the input data?
 #' @param cores.ratio ratio of the number of cores to be used when computing the multi-kernel
 #' @param large.scale use version of the algorithm designed for large data
+#' @param return_kernels Return kernels
 #' @param return_intermediaries Return intermediate values of S
 #'
 #' @return clusters the cells based on SIMLR and their similarities
@@ -57,6 +58,7 @@ SIMLR <- function(
   normalize = FALSE,
   cores.ratio = 1,
   large.scale = FALSE,
+  return_kernels = FALSE,
   return_intermediaries = FALSE)
 {
   # convert SCESet
@@ -499,6 +501,9 @@ SIMLR <- function(
     # converge = converge,
     # LF = LF
   )
+  if (return_kernels) {
+    result$kernel_dists <- D_Kernels
+  }
   if (return_intermediaries) {
     result$intermediaries <- intermediaries
   }
@@ -516,7 +521,7 @@ SIMLR <- function(
 #'
 run_SIMLR <- function(.data, ...) {
   message("Running SIMLR")
-  return(SIMLR(X = .data$in_X, c = .data$n_clust, return_intermediaries = TRUE, ...))
+  return(SIMLR(X = .data$in_X, c = .data$n_clust, return_kernels = TRUE, return_intermediaries = TRUE, ...))
 }
 
 
