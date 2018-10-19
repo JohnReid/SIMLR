@@ -36,7 +36,7 @@
 #'    LF = parameters of the clustering
 #'
 #' @export SIMLR
-#' @importFrom parallel stopCluster makeCluster detectCores clusterEvalQ
+#' @importFrom parallel stopCluster makeCluster detectCores clusterEvalQ clusterExport
 #' @importFrom parallel parLapply parSapply parRapply parApply
 #' @importFrom stats dnorm kmeans pbeta rnorm
 #' @importFrom methods is
