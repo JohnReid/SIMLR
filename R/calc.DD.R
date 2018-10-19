@@ -2,7 +2,8 @@
 #'
 #' @keywords internal
 #'
-calc.DD.parallel <- function(cl, D_Kernels, S)
+calc.DD.parallel <- function(cl, D_Kernels, S) {
+  parallel::clusterExport(cl, "S")
   parSapply(
     cl = cl,
     X = D_Kernels,
@@ -10,11 +11,9 @@ calc.DD.parallel <- function(cl, D_Kernels, S)
     # visualisation plots. That is SIMLR seems numerically unstable when the weights are perturbed
     # slightly
     # FUN = function(DK) sum((.Machine$double.eps + DK) * (S + .Machine$double.eps)) / ncol(DK))
-    FUN = function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps),
-        MARGIN = 2,
-        FUN = sum
-      ))
+    FUN = function(DK) mean(apply((.Machine$double.eps + DK) * (S + .Machine$double.eps), MARGIN = 2, FUN = sum))
   )
+}
 
 
 #' Calculate DD in serial
