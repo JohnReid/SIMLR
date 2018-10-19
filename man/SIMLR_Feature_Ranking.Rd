@@ -12,11 +12,11 @@ SIMLR_Feature_Ranking(A, X)
 \item{X}{an (m x n) data matrix of gene expression measurements of individual cells}
 }
 \value{
-a list of 2 elements: pvalues and ranking ordering over the n covariates 
+a list of 2 elements: pvalues and ranking ordering over the n covariates
 as estimated by the method
 }
 \description{
-perform the SIMLR feature ranking algorithm. This takes as input the original 
+perform the SIMLR feature ranking algorithm. This takes as input the original
 input data and the corresponding similarity matrix computed by SIMLR
 }
 \examples{

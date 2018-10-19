@@ -24,10 +24,10 @@ and object of class SCESet}
 \value{
 clusters the cells based on SIMLR Large Scale and their similarities
 
-list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters: 
-	y = results of k-means clusterings,
- 	S0 = similarities computed by SIMLR, 
- 	F = results from the large scale iterative procedure, 
+list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters:
+		y = results of k-means clusterings,
+ 	S0 = similarities computed by SIMLR,
+ 	F = results from the large scale iterative procedure,
  	ydata = data referring the the results by k-means,
  	alphaK = clustering coefficients,
  	val = distances from the k-nearest neighbour search,

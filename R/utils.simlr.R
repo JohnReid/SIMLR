@@ -245,14 +245,14 @@ zero_vec <- function(x, k) {
 }
 
 
-#' Order each row of X and return the ordering vectors
+#' Order each row of X and return the ordering vectors.
 #'
 #' @keywords internal
 #'
 order.rows <- function(X, cl) t(parApply(cl, X, MARGIN = 1, FUN = order))
 
 
-#' Return a vector of integers from from to to that are approximately evenly spaced
+#' Return a vector of integers from from to to that are approximately evenly spaced.
 #'
 #' @keywords internal
 #'
@@ -282,7 +282,7 @@ kernel_param_map <- function() {
 }
 
 
-#' Calculate how many cores from the ratio
+#' Calculate how many cores from the ratio.
 #'
 #' @keywords internal
 #'
@@ -295,7 +295,7 @@ cores_from_ratio <- function(cores.ratio) {
 }
 
 
-#' Set up the cluster to parallelise the kernel calculations
+#' Set up the cluster to parallelise the kernel calculations.
 #'
 #' @param cores.ratio Proportional of all possible cores - 1 to use.
 #'
@@ -314,7 +314,7 @@ start_cluster <- function(num.cores = 0, cores.ratio = 1) {
 }
 
 
-#' Sum the columns
+#' Sum the columns.
 #'
 #' @keywords internal
 #'
@@ -326,7 +326,7 @@ col_sums <- function(W, method = "apply")
   )
 
 
-#' Sum the rows
+#' Sum the rows.
 #'
 #' @keywords internal
 #'
@@ -338,7 +338,7 @@ row_sums <- function(W, method = "apply")
   )
 
 
-#' Scale the columns by w
+#' Scale the columns by w.
 #'
 #' @keywords internal
 #'
@@ -371,7 +371,7 @@ scale_rows <- function(W, w, method = "sparse")
 
 #' Calculate eigenvalues of a symmetric matrix P.
 #'
-#' @importFrom Rspectra eigs
+#' @importFrom RSpectra eigs
 #'
 #' @keywords internal
 #'
@@ -383,7 +383,7 @@ calc_eigs <- function(P, method = "eigen")
   )
 
 
-#' Divide rows by diagonal
+#' Divide rows by diagonal.
 #'
 #' @keywords internal
 #'
@@ -398,7 +398,9 @@ divide_rows_by_diag <- function(W, method = "sweep") {
 }
 
 
-#' Multiply rows, i.e. do \code{diag(v) %*% X}
+#' Multiply rows.
+#'
+#' Do diag(v) %*% X
 #'
 #' @keywords internal
 #'
@@ -410,7 +412,9 @@ multiply_rows <- function(v, X, method = "sweep")
   )
 
 
-#' Multiply cols, i.e. do \code{X %*% diag(v)}
+#' Multiply cols.
+#'
+#' Do X %*% diag(v)
 #'
 #' @keywords internal
 #'
@@ -422,7 +426,7 @@ multiply_cols <- function(v, X, method = "sweep")
   )
 
 
-#' Calculate Laplacian matrix
+#' Calculate Laplacian matrix.
 #'
 #' Calculate the Laplacian matrix of the graph represented by the adjacency matrix S
 #' https://en.wikipedia.org/wiki/Laplacian_matrix

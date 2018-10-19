@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils.simlr.R
 \name{approx_spaced_integers}
 \alias{approx_spaced_integers}
-\title{Return a vector of integers from from to to that are approximately evenly spaced}
+\title{Return a vector of integers from from to to that are approximately evenly spaced.}
 \usage{
 approx_spaced_integers(from, to, max_length)
 }
 \description{
-Return a vector of integers from from to to that are approximately evenly spaced
+Return a vector of integers from from to to that are approximately evenly spaced.
 }
 \keyword{internal}

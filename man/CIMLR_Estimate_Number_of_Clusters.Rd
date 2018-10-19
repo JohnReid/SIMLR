@@ -15,7 +15,7 @@ CIMLR_Estimate_Number_of_Clusters(all_data, NUMC = 2:5,
 \item{cores.ratio}{ratio of the number of cores to be used when computing the multi-kernel}
 }
 \value{
-a list of 2 elements: K1 and K2 with an estimation of the best clusters (the lower 
+a list of 2 elements: K1 and K2 with an estimation of the best clusters (the lower
 values the better) as discussed in the original paper of SIMLR
 }
 \description{

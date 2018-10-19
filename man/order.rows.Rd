@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils.simlr.R
 \name{order.rows}
 \alias{order.rows}
-\title{Order each row of X and return the ordering vectors}
+\title{Order each row of X and return the ordering vectors.}
 \usage{
 order.rows(X, cl)
 }
 \description{
-Order each row of X and return the ordering vectors
+Order each row of X and return the ordering vectors.
 }
 \keyword{internal}

@@ -2,10 +2,12 @@
 % Please edit documentation in R/network.diffusion.R
 \name{dominate.set}
 \alias{dominate.set}
-\title{Compute the dominate set for the matrix aff.matrix and NR.OF.KNN}
+\title{Calculate the nearest neighbours of each sample.}
 \usage{
 dominate.set(aff.matrix, NR.OF.KNN)
 }
 \description{
-Compute the dominate set for the matrix aff.matrix and NR.OF.KNN
+Creates a copy of `aff.matrix` such that every element smaller than the k'th
+largest in each row is zero'ed. A symmetric version of this matrix is then returned.
 }
+\keyword{internal}

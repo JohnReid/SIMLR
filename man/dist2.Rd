@@ -2,11 +2,16 @@
 % Please edit documentation in R/compute.multiple.kernel.R
 \name{dist2}
 \alias{dist2}
-\title{compute the single kernel}
+\title{Compute the squared Euclidean distance}
 \usage{
-dist2(x, c = NA)
+dist2(x1, x2 = NA)
+}
+\arguments{
+\item{x1}{The data}
+
+\item{x2}{The data (assumed to be same as x1 if not given)}
 }
 \description{
-NOTE: This function looks like it calculates the squared distance
+Compute the squared Euclidean distance
 }
 \keyword{internal}

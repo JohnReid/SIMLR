@@ -4,8 +4,11 @@
 \alias{SIMLR}
 \title{SIMLR}
 \usage{
-SIMLR(X, c, no.dim = NA, k = 10, if.impute = FALSE,
-  normalize = FALSE, cores.ratio = 1, return_intermediaries = FALSE)
+SIMLR(X, c, no.dim = NA, niter = NA, k = 10, kk = 100,
+  beta = 0.8, r_scale = 1.01, lambda_scale = 1.5,
+  convergence_test_threshold = 0.2, if.impute = FALSE,
+  normalize = FALSE, cores.ratio = 1, large.scale = FALSE,
+  return_kernels = FALSE, return_intermediaries = FALSE)
 }
 \arguments{
 \item{X}{an (m x n) data matrix of gene expression measurements of individual cells or
@@ -17,11 +20,25 @@ an object of class SCESet}
 
 \item{k}{tuning parameter}
 
+\item{kk}{number of principal components to be assessed in the PCA}
+
+\item{beta}{smoothing parameter (also used to adjust eigenvalues)}
+
+\item{r_scale}{factor to scale r by}
+
+\item{lambda_scale}{factor to scale lambda by}
+
+\item{convergence_test_threshold}{Threshold at which to warn about possibly needing more clusters}
+
 \item{if.impute}{should I traspose the input data?}
 
 \item{normalize}{should I normalize the input data?}
 
 \item{cores.ratio}{ratio of the number of cores to be used when computing the multi-kernel}
+
+\item{large.scale}{use version of the algorithm designed for large data}
+
+\item{return_kernels}{Return kernels}
 
 \item{return_intermediaries}{Return intermediate values of S}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/network.diffusion.R
 \name{network.diffusion}
 \alias{network.diffusion}
-\title{Perform network diffusion of K steps over the network A}
+\title{Perform network diffusion using K neareast neighbours over the network A}
 \usage{
 network.diffusion(A, K, scale_by_DD = TRUE)
 }
@@ -16,3 +16,4 @@ network.diffusion(A, K, scale_by_DD = TRUE)
 \description{
 This is called similarity enhancement by diffusion in the paper
 }
+\keyword{internal}

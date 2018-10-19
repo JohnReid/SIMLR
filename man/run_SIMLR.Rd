@@ -4,7 +4,7 @@
 \alias{run_SIMLR}
 \title{Apply the SIMLR algorithm to a data set}
 \usage{
-run_SIMLR(.data)
+run_SIMLR(.data, ...)
 }
 \description{
 Apply the SIMLR algorithm to a data set

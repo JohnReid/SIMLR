@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.simlr.R
 \name{start_cluster}
 \alias{start_cluster}
-\title{Set up the cluster to parallelise the kernel calculations}
+\title{Set up the cluster to parallelise the kernel calculations.}
 \usage{
 start_cluster(num.cores = 0, cores.ratio = 1)
 }
@@ -10,6 +10,6 @@ start_cluster(num.cores = 0, cores.ratio = 1)
 \item{cores.ratio}{Proportional of all possible cores - 1 to use.}
 }
 \description{
-Set up the cluster to parallelise the kernel calculations
+Set up the cluster to parallelise the kernel calculations.
 }
 \keyword{internal}

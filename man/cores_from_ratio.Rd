@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils.simlr.R
 \name{cores_from_ratio}
 \alias{cores_from_ratio}
-\title{Calculate how many cores from the ratio}
+\title{Calculate how many cores from the ratio.}
 \usage{
 cores_from_ratio(cores.ratio)
 }
 \description{
-Calculate how many cores from the ratio
+Calculate how many cores from the ratio.
 }
 \keyword{internal}
