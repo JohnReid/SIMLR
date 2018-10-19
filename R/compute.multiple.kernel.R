@@ -33,7 +33,7 @@ norm.and.calc.dists <- function(D_Kernels, offset = 1) {
   # }
   D_Kernels <- lapply(
     D_Kernels,
-    function(G) Matrix(kernel.distance.2(kernel.normalise(G, offset = offset)), sparse = TRUE, doDiag = FALSE)
+    function(G) kernel.distance.2(kernel.normalise(G, offset = offset))
   )
   return(D_Kernels)
 }
