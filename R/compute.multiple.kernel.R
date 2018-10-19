@@ -83,8 +83,7 @@ multiple.unnorm.kernels <- function(x, cl, dist_power = 2) {
         # Construct a kernel for each scaling sigma
         sigma_kernels <- lapply(.sigma, FUN = function(sigma) {
           # N.B. .Diff == the squared squared distance (i.e. power of 4)
-          W <- dnorm(.Diff, 0, sigma * Sig)
-          return(Matrix((W + t(W)) / 2, sparse = TRUE, doDiag = FALSE))
+          return(as(symmpart(dnorm(x = .Diff, mean = 0, sd = sigma * Sig)), 'dspMatrix'))
         })
         return(sigma_kernels)
       }
@@ -126,145 +125,33 @@ kernel.distance.2 <- function(G) {
 }
 
 
-# compute the multiple kernel
-compute.multiple.kernel <- function(kernel.type, x1, x2 = NA, kernel.params = NA) {
-
-  # set the parameters for x1
-  n1 <- nrow(x1)
-  d1 <- ncol(x1)
-
-  # set the parameters for x2
-  if (any(is.na(x2))) {
-    n2 <- n1
-    d2 <- d1
-    flag <- 0
-  }
-  else {
-    n2 <- nrow(x2)
-    d2 <- ncol(x2)
-    if (d1 != d2) {
-      stop("Error in the data.")
-    }
-    flag <- 1
-  }
-
-  # set the count.kernel.type
-  count.kernel.type <- length(kernel.params)
-  if (length(kernel.type) < 1 || length(kernel.type) != count.kernel.type) {
-    stop("Error in the parameters.")
-  }
-
-  # count the parameters
-  k.count <- 0
-  for (i in 1:count.kernel.type) {
-    k.count <- k.count + length(kernel.params[[i]])
-  }
-
-  # set the structure to save the kernels
-  kernels <- list()
-
-  # compute the kernels
-  iteration.kernels <- 1
-  for (i in 1:count.kernel.type) {
-    for (j in 1:length(kernel.params[[i]])) {
-      single.kernel.type <- kernel.type[[i]]
-      single.kernel.parameters <- kernel.params[[i]][j]
-      if (flag == 3) {
-        kernels[[iteration.kernels]] <- compute.kernel(single.kernel.type, x1, NA, single.kernel.parameters)
-      }
-      else {
-        kernels[[iteration.kernels]] <- compute.kernel(single.kernel.type, x1, x2, single.kernel.parameters)
-      }
-    }
-    iteration.kernels <- iteration.kernels + 1
-  }
-
-  return(kernels)
-}
-
-# compute the single kernel
-"compute.kernel" <- function(kernel.type, x1, x2 = NA, kernel.params = NA) {
-
-  # set the parameters for x1
-  n1 <- nrow(x1)
-  d1 <- ncol(x1)
-
-  # set the parameters for x2
-  if (any(is.na(x2))) {
-    n2 <- n1
-    d2 <- d1
-    flag <- 0
-  }
-  else {
-    n2 <- nrow(x2)
-    d2 <- ncol(x2)
-    if (d1 != d2) {
-      stop("Error in the data.")
-    }
-    flag <- 1
-  }
-
-  # consider any kernel type
-  if (kernel.type == "linear") {
-    K <- x1 %*% t(x2)
-  }
-  else if (kernel.type == "poly") {
-    K <- (x1 %*% t(x2))^kernel.params
-  }
-  else if (kernel.type == "rbf") {
-    if (flag == 0) {
-      P <- apply((x1 * x1), MARGIN = 1, FUN = sum)
-      P1 <- t(P)
-      P1 <- apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
-        x <- P1
-      })
-      P2 <- P
-      P2 <- apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
-        x <- P2
-      })
-    }
-    else {
-      P1 <- apply((x1 * x1), MARGIN = 1, FUN = sum)
-      P1 <- apply(array(0, c(nrow(P1), ncol(P1))), MARGIN = 2, FUN = function(x) {
-        x <- P1
-      })
-      P2 <- t(apply((x2 * x2), MARGIN = 1, FUN = sum))
-      P2 <- apply(array(0, c(nrow(P2), ncol(P2))), MARGIN = 1, FUN = function(x) {
-        x <- P2
-      })
-    }
-    K <- exp(-(P1 + P2 - 2 * x1 %*% t(x2)) %/% (2 * kernel.params^2))
-  }
-
-  return(K)
-}
-
-
-#' compute the single kernel
+#' Compute the squared Euclidean distance
 #'
-#' NOTE: This function looks like it calculates the squared distance
+#' @param x1 The data
+#' @param x2 The data (assumed to be same as x1 if not given)
+#'
 #' @keywords internal
 #'
-"dist2" <- function(x, c = NA) {
+dist2 <- function(x1, x2 = NA) {
 
-  # set the parameters for x
-  if (is.na(c)) {
-    c <- x
+  # set the parameters for x1
+  if (is.na(x2)) {
+    x2 <- x1
   }
 
   # compute the dimension
-  n1 <- nrow(x)
-  d1 <- ncol(x)
-  n2 <- nrow(c)
-  d2 <- ncol(c)
+  n1 <- nrow(x1)
+  d1 <- ncol(x1)
+  n2 <- nrow(x2)
+  d2 <- ncol(x2)
   if (d1 != d2) {
     stop("Data dimension does not match dimension of centres.")
   }
 
   # compute the distance
-  dist <- t(rep(1, n2) %*% t(apply(t(x^2), MARGIN = 2, FUN = sum))) +
-    (rep(1, n1) %*% t(apply(t(c^2), MARGIN = 2, FUN = sum))) -
-    2 * (x %*% t(c))
+  dist <- t(rep(1, n2) %*% t(apply(t(x1^2), MARGIN = 2, FUN = sum))) +
+    (rep(1, n1) %*% t(apply(t(x2^2), MARGIN = 2, FUN = sum))) -
+    2 * (x1 %*% t(x2))
 
   return(dist)
 }
