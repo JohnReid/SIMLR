@@ -3,7 +3,7 @@
 #' @keywords internal
 #'
 calc.DD.parallel <- function(cl, D_Kernels, S) {
-  parallel::clusterExport(cl, "S")
+  parallel::clusterExport(cl, "S", envir = environment())
   parSapply(
     cl = cl,
     X = D_Kernels,
