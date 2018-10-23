@@ -229,7 +229,7 @@ library("lbfgs")
 
 ###FZINB matrix ####
 # more other version of FZINB.matrix function, such as non-parallelling version, can be seen in file tryParallel.R
-"FZINB.matrix" <- function(X_counts, LogCOUNTS = TRUE, Theta0 = NULL, truncate.ratio = 0.3, n_gene = 1000 , cores.ratio = 1, distance = TRUE){
+"FZINB.matrix" <- function(X_counts, cl,  LogCOUNTS = TRUE, Theta0 = NULL, truncate.ratio = 0.3, n_gene = NULL , calc.dists = TRUE){
   if (LogCOUNTS){
     X_counts <- round(10^X_counts-1.0)
   }
@@ -245,7 +245,9 @@ library("lbfgs")
   cat(paste("-- Computing MLE for fitting ZINB.\n" ))
   THETA <- MLE.zinb(X_counts,Theta0)
   extract <- which(THETA[,3]>truncate.ratio & THETA[,3]<0.9)
-  
+  if (is.null(n_gene)){
+    n_gene <-length(extract)
+  }
   extract_sorted <- head(sort(apply(X_counts[extract,], 1, var), decreasing = TRUE,index.return = TRUE)$ix , n_gene)
   sorted <- extract[extract_sorted]
   cat("-- Computing FZINB for Gene.\n")
@@ -253,11 +255,7 @@ library("lbfgs")
   FZINB <-list()
   wd_ = getwd()
   
-  cores = as.integer(cores.ratio * (detectCores() - 1))
-  if (cores < 1) {
-    cores = 1
-  }
-  cl = makeCluster(cores)
+
   clusterExport(cl=cl, varlist = c("sorted","THETA","X_counts","wd_"), envir=environment())
   FZINB <- parLapply(cl, sorted, function(l){
     setwd(wd_)
@@ -269,9 +267,9 @@ library("lbfgs")
     }
     return(tempK) 
   })
-  stopCluster(cl)
+  
   FZINB <- matrix(Reduce("+", FZINB)/n_gene, ncol = n_cell)
-  if (distance){
+  if (calc.dists){
     k <- 1/sqrt(diag(FZINB))
     FD_matrix <- sqrt(abs(2 - 2*FZINB * (k %*% t(k))))
     diag(FD_matrix)<-0
