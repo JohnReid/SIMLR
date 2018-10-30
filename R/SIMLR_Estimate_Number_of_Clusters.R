@@ -32,6 +32,10 @@ SIMLR_Estimate_Number_of_Clusters <- function(X, NUMC = 2:5, cores.ratio = 1) {
   D_Kernels <- multiple.kernel(t(X), cl = cl, offset = .Machine$double.eps, dist_power = 1)
 
   #
+  # Stop the cluster
+  stopCluster(cl)
+
+  #
   # distX is the average of the distances
   distX <- Reduce("+", D_Kernels) / length(D_Kernels)
 
