@@ -24,8 +24,12 @@
 SIMLR_Estimate_Number_of_Clusters <- function(X, NUMC = 2:5, cores.ratio = 1) {
 
   #
+  # Start a cluster for parallel tasks
+  cl <- start_cluster(cores.ratio)
+
+  #
   # Calculate the kernel distances
-  D_Kernels <- multiple.kernel(t(X), cores.ratio = cores.ratio, offset = .Machine$double.eps, dist_power = 1)
+  D_Kernels <- multiple.kernel(t(X), cl = cl, offset = .Machine$double.eps, dist_power = 1)
 
   #
   # distX is the average of the distances
