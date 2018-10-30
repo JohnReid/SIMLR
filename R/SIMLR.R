@@ -14,6 +14,8 @@
 #' @param beta smoothing parameter (also used to adjust eigenvalues)
 #' @param r_scale factor to scale r by
 #' @param lambda_scale factor to scale lambda by
+#' @param randomise Randomise initial parameters
+#' @param alpha_alpha Dirichlet parameter to randomise initial alpha parameter
 #' @param convergence_test_threshold Threshold at which to warn about possibly needing more clusters
 #' @param if.impute should I traspose the input data?
 #' @param normalize should I normalize the input data?
@@ -53,6 +55,8 @@ SIMLR <- function(
   beta = 0.8,
   r_scale = 1.01,
   lambda_scale = 1.5,
+  randomise = FALSE,
+  alpha_alpha = 1.,
   convergence_test_threshold = .2,
   if.impute = FALSE,
   normalize = FALSE,
@@ -160,7 +164,11 @@ SIMLR <- function(
   #
   # alphaK looks like a Dirichlet prior: 1 / # categories
   # that is even weights across the kernels
-  alphaK <- 1 / rep(length(D_Kernels), length(D_Kernels))
+  if (randomise) {
+    alphaK <- gtools::rdirichlet(1, rep(alpha_alpha, length(D_Kernels)))
+  } else {
+    alphaK <- 1 / rep(length(D_Kernels), length(D_Kernels))
+  }
   if (return_intermediaries) intermediaries$alphaK[1, ] <- alphaK
   #
   # distX is the average of the distances

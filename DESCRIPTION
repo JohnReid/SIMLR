@@ -14,6 +14,7 @@ Imports:
     parallel,
     Matrix,
     stats,
+    gtools,
     methods,
     dplyr,
     reshape2,
