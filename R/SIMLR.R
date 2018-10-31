@@ -217,6 +217,7 @@ SIMLR <- function(
     timer$add("diffusion")
   }
   # Normalise S - this will be used as a starting estimate in the optimisation
+  # Note that S should be symmetric, this step results in asymmetry
   if (large.scale) {
     S <- dn_large_scale(S, "ave")
   } else {
