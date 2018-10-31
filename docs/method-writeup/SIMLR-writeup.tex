@@ -1,0 +1,169 @@
+\documentclass{article}
+
+%
+% Compiler specific packages
+%
+% Check if using XeTeX or not: https://tex.stackexchange.com/a/54597/39498
+\usepackage{ifxetex}
+\ifxetex{}
+  \usepackage{fontspec}
+  \usepackage{csquotes}
+  \usepackage{polyglossia}
+  \setmainlanguage[variant=british]{english}
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage[UKenglish, english]{babel}
+  \usepackage{lmodern}
+\fi
+
+%
+% Standard packages
+\usepackage{xcolor}
+
+%
+% Math
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{commath}
+
+%
+% Hyper-links
+\usepackage{hyperref}
+\hypersetup{colorlinks,
+            linkcolor={red!50!black},
+            citecolor={blue!50!black},
+            urlcolor={blue!80!black}}
+
+%
+% Biblatex
+\usepackage[
+  backend=biber,
+  url=false]{biblatex}
+% \addbibresource{../Helmy.bib}
+
+\title{SIMLR's method}
+\author{John Reid}
+
+
+%
+% Commands
+\newcommand{\knn}{\textnormal{KNN} (c_i)}
+
+
+%
+% Document
+\begin{document}
+\maketitle
+
+
+\section{Data}
+
+$X_{gj}$ is the expression for gene $g$ in cell $j$. $c_j = X_{:j}$ is the gene
+expression vector for cell $j$.
+
+
+\section{Similarities}
+\subsection{Kernels}
+
+Distances between the gene expression vectors are calculated as follows
+\begin{align}
+  d_{ij} &= \norm{c_i - c_j}_2^2 \\
+  D_{ij} &= d_{ij}^2
+\end{align}
+
+Given a parameter $k \in \mathbb{N}$, define $\knn$ to index the
+$k$-nearest-neighbours of cell $i$. Define
+\begin{align}
+  \mu_i &= \frac{1}{k} \sum_{j \in \knn} D_{ij}
+\end{align}
+$\mu_i$ can be viewed as a typical (w.r.t. $\knn$) length-scale for cell $i$.
+
+Now given a parameter $\sigma \in \mathbb{R}^+$ a length-scale for the similarity
+between cells $i$ and $j$ is defined as
+\begin{align}
+  \epsilon_{ij} &= \sigma \frac{(\mu_i + \mu_j)}{2}
+\end{align}
+and the similarity (kernel) between cells $i$ and $j$ is defined as
+\begin{align}
+  K(c_i, c_j) &= \frac{1}{\epsilon_{ij} \sqrt{2 \pi}} \exp \bigg[- \frac{D_{ij}^2}{2 \epsilon_{ij}} \bigg]
+\end{align}
+Note that $D_{ij}^2 = \norm{c_i - c_j}_2^8$ which is a power of four difference
+to the equations given in the SIMLR paper! Also note that this does not
+correspond to a Gaussian RBF kernel as the length-scales are different for each
+pair of samples. It is not clear if this is even positive semidefinite.
+
+
+\subsection{Gram normalisation}
+
+The kernel Gram matrices $G$ are normalised by the following procedure.
+\begin{align}
+  k_i &= \sqrt{G_{ii} + 1} \\
+  \tilde{G}_{ij} &= \frac{G_{ij}}{k_i k_j}
+\end{align}
+Note that without the $+1$ in the definition of $k_i$, this would correspond to
+normalisation in the feature space of $K$.
+
+
+\subsection{Distances}
+
+The kernel Gram matrices are converted to distances in feature space before use
+in the core of SIMLR's algorithm.
+\begin{align}
+  \hat{D}_{ij} &= \frac{1}{2} \big[ \tilde{G}_{ii} + \tilde{G}_{jj} - 2 \tilde{G}_{ij} \big]
+\end{align}
+The scaling by $\frac{1}{2}$ is non-standard.
+
+
+\subsection{Multiple kernels}
+
+Distances are calculated as above for all $k = 10, 12, 14, \dots, 30$ and
+$\sigma = 1, 1.25, 1.5, 1.75, 2$ forming a set of distance matrices $D^{(l)}$,
+where $l = 1, \dots, 55$. The mean of these distances is defined as
+\begin{align}
+  \bar{D} &= \frac{1}{55} \sum_{l=1}^{55} D^{(l)}
+\end{align}
+
+
+
+\section{Initialisation}
+
+The similarity matrix $S$ is initialised as
+\begin{align}
+  S_{ij} &= \max_{ij}{\bar{D}_{ij}} - \bar{D}_{ij}
+\end{align}
+
+
+\subsection{Similarity normalisation}
+
+Similarity matrices $Q$ are normalised as
+\begin{align}
+  \tilde{Q}_{ij} &= \frac{Q_{ij}}{\sum_{i'} Q_{i'i}}
+\end{align}
+
+
+\section{Network diffusion}
+
+We perform network diffusion on a similarity matrix $Q$ using the $k$-nearest-neighbours
+by defining
+\begin{align}
+  Q^{(0)}_{ij} &= \begin{cases}
+    Q_{ij} & \textnormal{if $Q_{ij}$ is in the largest $k$ elements of $Q_{i:}$} \\
+    0      & \textnormal{otherwise}
+  \end{cases}
+\end{align}
+
+We define a version of $Q^{(0)}$ with an altered diagonal
+\begin{align}
+  Q'_{ij} &= \begin{cases}
+    \sum_{j'} Q^{(0)}_{ij'} + 1 & \textnormal{if $i=j$} \\
+    Q^{(0)}_{ij}                & \textnormal{otherwise}
+  \end{cases}
+\end{align}
+
+A transition fields matrix $P$ is calculated from $Q'$ and the eigenvectors of this
+are used to perform the diffusion.
+
+
+% \printbibliography{}
+\end{document}
