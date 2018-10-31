@@ -314,7 +314,7 @@ SIMLR <- function(
       # Remove any NaNs
       A[is.nan(A)] <- 0
       # Make the adjacency matrix symmetric
-      A <- (A + t(A)) / 2
+      A <- symmetrize(A)
       # S is a smoothed version of the old S with the new adjacency
       S <- (1 - beta) * S + beta * A
     }
@@ -442,6 +442,10 @@ SIMLR <- function(
 
     }
   }
+
+  #
+  # Convert back to standard matrix as following code cannot cope with dspMatrix object
+  S <- as.matrix(S)
 
   if (! large.scale) {
 

@@ -439,3 +439,12 @@ laplacian <- function(S, method = 'orig')
     apply = sapply(1:ncol(S), function(i) { x <- S[, i]; x[i] <- x[i] - sum(x); -x }),
     stop("Unknown method")
   )
+
+
+#' Symmetrize a matrix
+#'
+#' Return a symmetric version of the matrix by averaging with its transpose
+#'
+#' @keywords internal
+#'
+symmetrize <- function(A) as((A + t(A)) / 2, 'dspMatrix')

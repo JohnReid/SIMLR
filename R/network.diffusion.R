@@ -12,6 +12,7 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
 
   # Check our assumptions about arguments are correct
   stopifnot(all(A >= 0))
+  # stopifnot(isSymmetric(A))
 
   # set the values of the diagonal of A to 0
   diag(A) <- 0
@@ -55,12 +56,14 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   }
 
   # Ensure W is symmetric
-  W <- (W + t(W)) / 2
+  W <- symmetrize(W)
 
   # Ensure all W are non-negative
   W[W < 0] <- 0
 
-  return(W)
+  # Ensure W is symmetric
+  return(symmetrize(W))
+  # return(W)
 }
 
 
