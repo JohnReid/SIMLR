@@ -1,0 +1,226 @@
+\documentclass{article}
+
+%
+% Compiler specific packages
+%
+% Check if using XeTeX or not: https://tex.stackexchange.com/a/54597/39498
+\usepackage{ifxetex}
+\ifxetex{}
+  \usepackage{fontspec}
+  \usepackage{csquotes}
+  \usepackage{polyglossia}
+  \setmainlanguage[variant=british]{english}
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage[UKenglish, english]{babel}
+  \usepackage{lmodern}
+\fi
+
+%
+% Standard packages
+\usepackage{xcolor}
+
+%
+% Math
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{commath}
+
+%
+% Hyper-links
+\usepackage{hyperref}
+\hypersetup{colorlinks,
+            linkcolor={red!50!black},
+            citecolor={blue!50!black},
+            urlcolor={blue!80!black}}
+
+%
+% Biblatex
+\usepackage[
+  backend=biber,
+  url=false]{biblatex}
+% \addbibresource{BIBLIOGRAPHY.bib}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+
+
+\title{Spectral graph theory notes}
+\author{John Reid}
+
+
+
+\begin{document}
+\maketitle
+
+
+
+\section{Notation}
+
+We follow Michael Mahoney's Spectral Graph Theory notes for notation.  Let $G =
+(V, E, W)$ be an undirected, weighted graph.
+
+\theoremstyle{definition}
+\begin{definition}{$G$ is said to be \emph{d-regular} if all its vertices have degree $d$}
+\end{definition}
+
+
+\subsection{Graph matrices}
+
+\theoremstyle{definition}
+\begin{definition}{Adjacency matrix, $A \in \mathbb{R}^{n \times n}$}
+  \begin{align*}
+    A_{ij} &=
+    \begin{cases}
+      W_{ij} & \textnormal{if } (ij) \in E \\
+      0      & \textnormal{otherwise}
+    \end{cases}
+  \end{align*}
+\end{definition}
+
+
+\theoremstyle{definition}
+\begin{definition}{Diagonal degree matrix, $D \in \mathbb{R}^{n \times n}$}
+  \begin{align*}
+    D_{ij} &=
+    \begin{cases}
+      \sum_k W_{ik} & \textnormal{if } i = j \\
+      0             & \textnormal{otherwise}
+    \end{cases}
+  \end{align*}
+\end{definition}
+
+
+\theoremstyle{definition}
+\begin{definition}{Diffusion operator}
+  \begin{align*}
+    D^{-1}A
+  \end{align*}
+\end{definition}
+
+
+\theoremstyle{definition}
+\begin{definition}{Laplacian matrix \emph{(or combinatorial Laplacian matrix)}}
+  \begin{align*}
+    L = D - A
+  \end{align*}
+\end{definition}
+
+
+\theoremstyle{definition}
+\begin{definition}{Normalised Laplacian matrix}
+  \begin{align*}
+    \mathcal{L} = D^{-\frac{1}{2}} L D^{-\frac{1}{2}} = I - D^{-\frac{1}{2}} A D^{-\frac{1}{2}}
+  \end{align*}
+\end{definition}
+
+
+
+\subsection{Graph cuts}
+
+\theoremstyle{definition}
+\begin{definition}
+  A \emph{cut} $C = (S, T)$ of a graph is a partition of the vertex set $V$.
+\end{definition}
+
+\theoremstyle{definition}
+\begin{definition}
+  An \emph{$s$-$t$-cut} of $G$ is a cut s.t. $s \in S$ and $t \in T$.
+\end{definition}
+
+\theoremstyle{definition}
+\begin{definition}
+  The \emph{cut set} of a cut $(S, T)$ is the set of edges between $S$ and $T$.
+\end{definition}
+
+\theoremstyle{definition}
+\begin{definition}
+  The \emph{sparsity} of a cut $(S, \bar{S})$ of a $d$-regular graph $(V, E)$ is
+  \begin{align*}
+    \sigma(S) = \frac{|V| E(S, \bar{S})}{d|S||\bar{S}|}
+  \end{align*}
+\end{definition}
+
+\theoremstyle{definition}
+\begin{definition}
+  The \emph{edge expansion} of a cut $(S, \bar{S})$ of a $d$-regular graph $(V, E)$ is
+  \begin{align*}
+    \phi(S) = \frac{E(S, \bar{S})}{d|S|}
+  \end{align*}
+\end{definition}
+
+It is a fact that $\phi(S)$ and $\sigma(S)$ can only differ by a factor less than or equal to 2.
+
+\theoremstyle{definition}
+\begin{definition}
+  The \emph{sparsity} of a $d$-regular graph $G = (V, E)$ is
+  \begin{align*}
+    \sigma(G) = \min_{S \subset V: S \ne \emptyset, S \ne V} \sigma(S)
+  \end{align*}
+\end{definition}
+
+\theoremstyle{definition}
+\begin{definition}
+  The \emph{edge expansion} of a $d$-regular graph $G = (V, E)$ is
+  \begin{align*}
+    \phi(G) = \min_{S \subset V: |S| \le \frac{|V|}{2}} \phi(S)
+  \end{align*}
+\end{definition}
+
+
+
+
+\subsection{Graph properties}
+
+\theoremstyle{definition}
+\begin{definition}
+  Let $\lambda_1, \dots, \lambda_n$ be the eigenvalues of a matrix $A$, then the \emph{spectral radius}
+  $\rho_A = \rho(A) = \max_i(|\lambda_i|)$.
+\end{definition}
+
+
+
+\section{Results}
+
+\subsection{Spectral analysis}
+
+\begin{theorem}[Perron-Frobenius-like for regular graphs]
+  Let $G$ be a $d$-regular undirected graph and let $\lambda_1 \le \lambda_2 \le \dots \le \lambda_n$ be the
+  real eigenvalues of its normalised Laplacian $\mathcal{L} = I - \frac{1}{d}A$, then:
+  \begin{enumerate}
+    \item $\lambda_1 = 0$ and the associated eigenvector
+      $x_1 = \frac{1}{\sqrt{n}} = (\frac{1}{\sqrt{n}}, \dots, \frac{1}{\sqrt{n}})$.
+    \item $\lambda_2 \le 2$.
+    \item $\lambda_k = 0$ if and only if $g$ has at least $k$ connected components.
+    \item $\lambda_n = 2$ if and only if one component is bipartite.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Similar but for adjacency matrix]
+  Let $G$ be a $d$-regular undirected graph and let $\alpha_1 \ge \alpha_2 \ge \dots \ge \alpha_n$ and
+  $v_1, \dots, v_n$ be the real eigenvalues and respective eigenvectors of its adjacency matrix $A$, then:
+  \begin{enumerate}
+    \item $\alpha_1 = d$ and $v_1 = \frac{1}{\sqrt{n}} = (\frac{1}{\sqrt{n}}, \dots, \frac{1}{\sqrt{n}})$.
+    \item $\alpha_n \ge -d$.
+    \item $G$ is connected if and only if $\alpha_1 > \alpha_2$.
+    \item $G$ is bipartite if and only if $\alpha_1 = -\alpha_n$.
+  \end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Basic Cheeger's Inequality]
+  Let $G$ be a $d$-regular undirected graph and let $\lambda_1 \le \lambda_2 \le \dots \le \lambda_n$ be the
+  real eigenvalues of its normalised Laplacian $\mathcal{L} = I - \frac{1}{d}A$, then:
+  \begin{align*}
+    \frac{\lambda_2}{2} \le \phi(G) \le \sqrt{2 \lambda_2}
+  \end{align*}
+\end{theorem}
+Note that this directly implies
+\begin{align}
+  \frac{{\phi(G)}^2}{2} \le \lambda_2 \le 2 \phi(G)
+\end{align}
+
+
+% \printbibliography{}
+\end{document}
