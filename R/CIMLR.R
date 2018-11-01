@@ -198,6 +198,11 @@
       idx[i, ] <- res[[i]]$ix
     }
   }
+
+  #
+  # Convert to type that rest of code can handle...
+  S <- as.matrix(S)
+
   LF <- F_eig1
   D <- diag(apply(S, MARGIN = 2, FUN = sum))
   L <- D - S
