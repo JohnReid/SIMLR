@@ -2,20 +2,21 @@
 % Please edit documentation in R/network.diffusion.R
 \name{dn}
 \alias{dn}
-\title{Normalizes a symmetric kernel w.}
+\title{Normalizes a symmetric kernel W.}
 \usage{
 dn(W, type)
 }
 \arguments{
-\item{:}{w The symmetric kernel}
+\item{:}{W The symmetric kernel}
 
 \item{:}{type The normalisation type
 \enumerate{
-  \item 'ave' Scales the rows by the column sums
-  \item 'gph' Scales each element by the square root of its column and row sums
+  \item 'ave' Scales the rows by the column sums.
+  \item 'gph' Scales each element by the square root of its column and row sums.
+    This is probably for the case when W is not symmetric but does not seem to be used.
 }}
 }
 \description{
-Normalizes a symmetric kernel w.
+Normalizes a symmetric kernel W.
 }
 \keyword{internal}

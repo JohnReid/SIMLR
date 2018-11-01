@@ -4,7 +4,7 @@
 \alias{dominate.set}
 \title{Calculate the nearest neighbours of each sample.}
 \usage{
-dominate.set(aff.matrix, NR.OF.KNN)
+dominate.set(aff.matrix, k)
 }
 \description{
 Creates a copy of `aff.matrix` such that every element smaller than the k'th

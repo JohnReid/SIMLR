@@ -6,6 +6,7 @@
 \usage{
 SIMLR(X, c, no.dim = NA, niter = NA, k = 10, kk = 100,
   beta = 0.8, r_scale = 1.01, lambda_scale = 1.5,
+  randomise = FALSE, alpha_alpha = 1,
   convergence_test_threshold = 0.2, if.impute = FALSE,
   normalize = FALSE, cores.ratio = 1, large.scale = FALSE,
   return_kernels = FALSE, return_intermediaries = FALSE)
@@ -27,6 +28,10 @@ an object of class SCESet}
 \item{r_scale}{factor to scale r by}
 
 \item{lambda_scale}{factor to scale lambda by}
+
+\item{randomise}{Randomise initial parameters}
+
+\item{alpha_alpha}{Dirichlet parameter to randomise initial alpha parameter}
 
 \item{convergence_test_threshold}{Threshold at which to warn about possibly needing more clusters}
 
