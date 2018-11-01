@@ -7,7 +7,7 @@
 dominate.set(aff.matrix, k)
 }
 \description{
-Creates a copy of `aff.matrix` such that every element smaller than the k'th
+Creates a copy of aff.matrix such that every element smaller than the k'th
 largest in each row is zero'ed. A symmetric version of this matrix is then returned.
 }
 \keyword{internal}

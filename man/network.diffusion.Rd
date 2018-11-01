@@ -7,11 +7,11 @@
 network.diffusion(A, k, scale_by_DD = TRUE)
 }
 \arguments{
-\item{A:}{The distance matrix}
+\item{A}{The distance matrix}
 
-\item{k:}{The number of nearest neighbours to consider}
+\item{k}{The number of nearest neighbours to consider}
 
-\item{scale_by_DD:}{Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc()}
+\item{scale_by_DD}{Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc())}
 }
 \description{
 This is called similarity enhancement by diffusion in the paper

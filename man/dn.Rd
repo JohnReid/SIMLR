@@ -17,6 +17,7 @@ dn(W, type)
 }}
 }
 \description{
-Normalizes a symmetric kernel W.
+That is if W is a symmetric adjacency matrix and D is the corresponding diagonal degree matrix,
+compute inv(D) %*% W, which in spectral graph theory is the diffusion operator.
 }
 \keyword{internal}

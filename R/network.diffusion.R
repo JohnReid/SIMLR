@@ -2,9 +2,9 @@
 #'
 #' This is called similarity enhancement by diffusion in the paper
 #'
-#' @param A: The distance matrix
-#' @param k: The number of nearest neighbours to consider
-#' @param scale_by_DD: Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc()
+#' @param A The distance matrix
+#' @param k The number of nearest neighbours to consider
+#' @param scale_by_DD Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc())
 #'
 #' @keywords internal
 #'
@@ -69,7 +69,7 @@ network.diffusion <- function(A, k, scale_by_DD = TRUE) {
 
 #' Calculate the nearest neighbours of each sample.
 #'
-#' Creates a copy of `aff.matrix` such that every element smaller than the k'th
+#' Creates a copy of aff.matrix such that every element smaller than the k'th
 #' largest in each row is zero'ed. A symmetric version of this matrix is then returned.
 #'
 #' @keywords internal
@@ -82,7 +82,7 @@ dominate.set <- function(aff.matrix, k) {
 
 #' Compute the transition field of the given matrix
 #'
-#' For a given adjacency matrix W, calculate the diffusion operator \code{M = D^{-1} %*% W}.
+#' For a given adjacency matrix W, calculate the diffusion operator M <- inv(D) %*% W.
 #'
 #' @importFrom Matrix t tcrossprod Diagonal colSums
 #'
@@ -121,7 +121,7 @@ transition.fields <- function(W) {
 #' Normalizes a symmetric kernel W.
 #'
 #' That is if W is a symmetric adjacency matrix and D is the corresponding diagonal degree matrix,
-#' compute \code{D^{-1} %*% W}, which in spectral graph theory is the diffusion operator.
+#' compute inv(D) %*% W, which in spectral graph theory is the diffusion operator.
 #'
 #' @param: W The symmetric kernel
 #' @param: type The normalisation type

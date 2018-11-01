@@ -7,6 +7,6 @@
 transition.fields(W)
 }
 \description{
-Compute the transition field of the given matrix
+For a given adjacency matrix W, calculate the diffusion operator M <- inv(D) %*% W.
 }
 \keyword{internal}
