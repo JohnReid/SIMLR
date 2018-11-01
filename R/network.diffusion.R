@@ -3,12 +3,12 @@
 #' This is called similarity enhancement by diffusion in the paper
 #'
 #' @param A: The distance matrix
-#' @param K: The number of nearest neighbours to consider
+#' @param k: The number of nearest neighbours to consider
 #' @param scale_by_DD: Scale W by DD (included in standard network.diffusion() but not in network.diffusion.numc()
 #'
 #' @keywords internal
 #'
-network.diffusion <- function(A, K, scale_by_DD = TRUE) {
+network.diffusion <- function(A, k, scale_by_DD = TRUE) {
 
   # Check our assumptions about arguments are correct
   stopifnot(all(A >= 0))
@@ -17,8 +17,8 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
   # set the values of the diagonal of A to 0
   diag(A) <- 0
 
-  # compute the dominate set for A and K
-  P <- dominate.set(abs(A), min(K, nrow(A) - 1)) * sign(A)
+  # compute the dominate set for A and k
+  P <- dominate.set(abs(A), min(k, nrow(A) - 1)) * sign(A)
 
   # sum the absolute value of each row of P
   DD <- row_sums(abs(P), method = "apply")
@@ -74,13 +74,15 @@ network.diffusion <- function(A, K, scale_by_DD = TRUE) {
 #'
 #' @keywords internal
 #'
-dominate.set <- function(aff.matrix, NR.OF.KNN) {
-  PNN <- apply(aff.matrix, MARGIN = 1, FUN = purrr::partial(zero_vec, k = NR.OF.KNN))
+dominate.set <- function(aff.matrix, k) {
+  PNN <- apply(aff.matrix, MARGIN = 1, FUN = purrr::partial(zero_vec, k = k))
   return(as((t(PNN) + PNN) / 2, "dsCMatrix"))
 }
 
 
 #' Compute the transition field of the given matrix
+#'
+#' For a given adjacency matrix W, calculate the diffusion operator \code{M = D^{-1} %*% W}.
 #'
 #' @importFrom Matrix t tcrossprod Diagonal colSums
 #'
@@ -96,7 +98,7 @@ transition.fields <- function(W) {
   # Double check our assumption is correct....
   stopifnot(length(zero.index) == 0)
   #
-  # Normalise W
+  # Create the diffusion operator for W
   W <- dn(W, "ave")
   #
   # Divide each element by the square root of the sum of the absolute value of its column
@@ -116,13 +118,17 @@ transition.fields <- function(W) {
 }
 
 
-#' Normalizes a symmetric kernel w.
+#' Normalizes a symmetric kernel W.
 #'
-#' @param: w The symmetric kernel
+#' That is if W is a symmetric adjacency matrix and D is the corresponding diagonal degree matrix,
+#' compute \code{D^{-1} %*% W}, which in spectral graph theory is the diffusion operator.
+#'
+#' @param: W The symmetric kernel
 #' @param: type The normalisation type
 #'    \enumerate{
-#'      \item 'ave' Scales the rows by the column sums
-#'      \item 'gph' Scales each element by the square root of its column and row sums
+#'      \item 'ave' Scales the rows by the column sums.
+#'      \item 'gph' Scales each element by the square root of its column and row sums.
+#'        This is probably for the case when W is not symmetric but does not seem to be used.
 #'    }
 #'
 #' @keywords internal
