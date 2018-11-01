@@ -10,6 +10,7 @@ CumulativeTimer <-
     public = list(
       last_time = NULL,
       timings = list(),
+      ncalls = list(),
       initialize = function() {
         self$reset_last_time()
       },
@@ -19,18 +20,23 @@ CumulativeTimer <-
       add = function(name) {
         # How long since the last call?
         elapsed <- proc.time() - self$last_time
+        ncalls <- 1
         # If we already have an elapsed time for the name, add it
         if (name %in% names(self$timings)) {
           elapsed <- self$timings[[name]] + elapsed
+          ncalls <- self$ncalls[[name]] + ncalls
         }
         # Assign to our list
         self$timings[[name]] <- elapsed
+        self$ncalls[[name]] <- ncalls
         # Update the last time
         self$reset_last_time()
       },
       get_timings = function() {
+        stopifnot(all(names(self$timings) == names(self$ncalls)))
         as.data.frame(t(as.data.frame(lapply(self$timings, data.matrix)))) %>%
           dplyr::mutate(task = names(self$timings)) %>%
+          dplyr::mutate(ncalls = unlist(self$ncalls)) %>%
           dplyr::arrange(-elapsed)
       }
     )
