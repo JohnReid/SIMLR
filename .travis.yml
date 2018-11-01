@@ -15,7 +15,3 @@ branches:
   only:
   - master
   - development
-
-script:
-  - Rscript -e "library(testthat); invisible(source_dir('./', env=globalenv())); test_dir('tests/testthat'); test_dir('tests/testthat', reporter='stop')"
-
