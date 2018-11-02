@@ -3,10 +3,11 @@
 ^.gitignore$
 ^.travis.yml$
 ^.git/.*$
+^vignettes/.build.timestamp$
 src/*.o
 src/*.so
-LICENSE.md
-.travis.yml
-.ctags
-docs
-MATLAB
+^LICENSE.md
+^.travis.yml
+^.ctags
+^docs
+^MATLAB
