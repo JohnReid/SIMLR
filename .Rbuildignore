@@ -3,7 +3,9 @@
 ^.gitignore$
 ^.travis.yml$
 ^.git/.*$
+^figure/
 ^vignettes/.build.timestamp$
+^vignettes/figure$
 ^inst/sandbox$
 src/*.o
 src/*.so
