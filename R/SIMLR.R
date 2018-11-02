@@ -38,11 +38,14 @@
 #'    LF = parameters of the clustering
 #'
 #' @export SIMLR
+#'
 #' @importFrom parallel stopCluster makeCluster detectCores clusterEvalQ clusterExport
 #' @importFrom parallel parLapply parSapply parRapply parApply
-#' @importFrom stats dnorm kmeans pbeta rnorm
-#' @importFrom methods is
+#' @importFrom stats dnorm kmeans pbeta rnorm dist sigma
+#' @importFrom methods is as
+#' @importFrom grDevices colorRampPalette
 #' @import Matrix
+#'
 #' @useDynLib SIMLR projsplx
 #'
 SIMLR <- function(
@@ -719,3 +722,17 @@ summarise_SIMLR <- function(
 
   invisible(res)
 }
+
+
+#
+# Include these to mitigate CRAN check NOTEs
+globalVariables(c(
+  "V1",
+  "V2",
+  "label",
+  "weight",
+  "k",
+  "sigma",
+  "eigenvalue",
+  "eigenvector",
+  "Rtsne_cpp"))

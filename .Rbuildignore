@@ -8,3 +8,5 @@ src/*.so
 LICENSE.md
 .travis.yml
 .ctags
+docs
+MATLAB
