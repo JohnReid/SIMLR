@@ -46,7 +46,7 @@
 #' @importFrom grDevices colorRampPalette
 #' @import Matrix
 #'
-#' @useDynLib SIMLR projsplx
+#' @useDynLib SIMLR, .registration = TRUE
 #'
 SIMLR <- function(
   X,
