@@ -3,8 +3,7 @@
 
 | Branch              | Stato CI      |
 |---------------------|---------------|
-| master | [![Build Status](https://travis-ci.org/BatzoglouLabSU/SIMLR.svg?branch=master)](https://travis-ci.org/BatzoglouLabSU/SIMLR) |
-| development | [![Build Status](https://travis-ci.org/BatzoglouLabSU/SIMLR.svg?branch=development)](https://travis-ci.org/BatzoglouLabSU/SIMLR) |
+| master | [![Build Status](https://travis-ci.org/BatzoglouLabSU/SIMLR.svg?branch=master)](https://travis-ci.org/JohnReid/SIMLR) |
 
 
 **OVERVIEW**
