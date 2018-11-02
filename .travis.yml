@@ -10,6 +10,11 @@ before_install:
   - tlmgr install parnotes
   - tlmgr install marginfix
 
+addons:
+  apt:
+    packages:
+      - ghostscript
+
 # safelist
 branches:
   only:
