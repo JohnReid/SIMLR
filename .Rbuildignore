@@ -4,6 +4,7 @@
 ^.travis.yml$
 ^.git/.*$
 ^vignettes/.build.timestamp$
+^inst/sandbox$
 src/*.o
 src/*.so
 ^LICENSE.md
