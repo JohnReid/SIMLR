@@ -50,20 +50,18 @@ an object of class SCESet}
 \item{return_intermediaries}{Return intermediate values of S}
 }
 \value{
-clusters the cells based on SIMLR and their similarities
-
-list describing the clusters obtained by SIMLR, of which y are the resulting clusters:
-  \begin{enumerate}
-    \item y = results of k-means clusterings,
-    \item S = similarities computed by SIMLR,
-    \item F = results from network diffiusion,
-    \item ydata = data referring the the results by k-means,
-    \item alphaK = clustering coefficients,
-    \item execution.time = execution time of the present run,
-    \item timings = execution times of sub-tasks,
-    \item converge = iterative convergence values by T-SNE,
-    \item LF = parameters of the clustering
-  \end{enumerate}
+a list describing the clusters obtained by SIMLR, of which y are the resulting clusters
+  \describe{
+    \item{y:}{results of k-means clusterings}
+    \item{S:}{similarities computed by SIMLR}
+    \item{F:}{results from network diffiusion}
+    \item{ydata:}{data referring the the results by k-means}
+    \item{alphaK:}{clustering coefficients}
+    \item{execution.time:}{execution time of the present run}
+    \item{timings:}{execution times of sub-tasks}
+    \item{converge:}{iterative convergence values by T-SNE}
+    \item{LF:}{parameters of the clustering}
+  }
 }
 \description{
 perform the SIMLR clustering algorithm
