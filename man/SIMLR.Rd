@@ -52,16 +52,18 @@ an object of class SCESet}
 \value{
 clusters the cells based on SIMLR and their similarities
 
-list of 8 elements describing the clusters obtained by SIMLR, of which y are the resulting clusters:
-   y = results of k-means clusterings,
-   S = similarities computed by SIMLR,
-   F = results from network diffiusion,
-   ydata = data referring the the results by k-means,
-   alphaK = clustering coefficients,
-   execution.time = execution time of the present run,
-   timings = execution times of sub-tasks,
-   converge = iterative convergence values by T-SNE,
-   LF = parameters of the clustering
+list describing the clusters obtained by SIMLR, of which y are the resulting clusters:
+  \begin{enumerate}
+    \item y = results of k-means clusterings,
+    \item S = similarities computed by SIMLR,
+    \item F = results from network diffiusion,
+    \item ydata = data referring the the results by k-means,
+    \item alphaK = clustering coefficients,
+    \item execution.time = execution time of the present run,
+    \item timings = execution times of sub-tasks,
+    \item converge = iterative convergence values by T-SNE,
+    \item LF = parameters of the clustering
+  \end{enumerate}
 }
 \description{
 perform the SIMLR clustering algorithm
