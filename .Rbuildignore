@@ -1,5 +1,5 @@
 ^.ctags
-^.git/
+^.git/.*$
 ^.gitignore$
 ^.travis.yml$
 ^LICENSE.md$
