@@ -19,6 +19,8 @@ an object of class SCESet}
 
 \item{no.dim}{number of dimensions}
 
+\item{niter}{maximum number of iterations}
+
 \item{k}{tuning parameter}
 
 \item{kk}{number of principal components to be assessed in the PCA}

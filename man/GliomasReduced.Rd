@@ -13,7 +13,9 @@ data(GliomasReduced)
 }
 \value{
 list of 1 element:
-		in_X = input dataset as a list of 4 (reduced) multi-omic data each of which is an (m x n) measurements of cancer patients
+  \enumerate{
+    \item in_X = input dataset as a list of 4 (reduced) multi-omic data each of which is an (m x n) measurements of cancer patients
+  }
 }
 \description{
 example dataset to test CIMLR. This is a reduced version of the dataset from the work by The Cancer Genome Atlas Research Network.
