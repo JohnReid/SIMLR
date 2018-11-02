@@ -1,7 +1,7 @@
 **SIMLR** and **CIMLR** Multi-kernel LeaRning methods 
 ===================================================== 
 
-| Branch              | Stato CI      |
+| Branch              | Status CI      |
 |---------------------|---------------|
 | master | [![Build Status](https://travis-ci.org/BatzoglouLabSU/SIMLR.svg?branch=master)](https://travis-ci.org/JohnReid/SIMLR) |
 
