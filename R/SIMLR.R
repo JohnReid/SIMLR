@@ -9,6 +9,7 @@
 #'   an object of class SCESet
 #' @param c number of clusters to be estimated over X
 #' @param no.dim number of dimensions
+#' @param niter maximum number of iterations
 #' @param k tuning parameter
 #' @param kk number of principal components to be assessed in the PCA
 #' @param beta smoothing parameter (also used to adjust eigenvalues)
