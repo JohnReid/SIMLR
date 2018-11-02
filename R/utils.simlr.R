@@ -1,6 +1,7 @@
 #' A class to measure cumulative time across sub-tasks.
 #'
 #' @importFrom magrittr %>%
+#' @importFrom R6 R6Class
 #'
 #' @keywords internal
 #'
