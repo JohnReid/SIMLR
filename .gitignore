@@ -38,3 +38,8 @@ cfg.R
 
 ..Rcheck
 SIMLR.Rcheck
+
+inst/example_scripts/test-commits.R
+inst/sandbox/
+
+
